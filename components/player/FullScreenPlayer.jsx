@@ -2,25 +2,26 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
-  nextSong,
-  previousSong,
-  setProgress,
-  setVolume,
-  togglePlayPause,
+    nextSong,
+    previousSong,
+    setProgress,
+    setVolume,
+    togglePlayPause,
 } from "@/lib/slices/playerSlice";
 import {
-  Heart,
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  Volume2
+    ArrowLeft,
+    Heart,
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
+    Volume2
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-const Player = () => {
+const FullScreenPlayer = ({ onClose }) => {
   const dispatch = useDispatch();
   const { data: session } = useSession();
   const { currentSong, isPlaying, volume, progress, queue, queueIndex } =
@@ -33,7 +34,6 @@ const Player = () => {
   const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [showFullScreen, setShowFullScreen] = useState(false);
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -60,13 +60,6 @@ const Player = () => {
     };
   }, []);
 
-  // Show full-screen player when song starts playing
-  useEffect(() => {
-    if (isPlaying && currentSong && hasUserInteracted) {
-      setShowFullScreen(true);
-    }
-  }, [isPlaying, currentSong, hasUserInteracted]);
-
   // Load liked songs from DB
   useEffect(() => {
     if (!isClient || !session?.user) return;
@@ -84,7 +77,7 @@ const Player = () => {
       .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
       .catch(() => setLikedSongs([]));
   }, [isClient, session?.user?.email]);
-  
+
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = () => {
     if (!currentSong?.downloadUrl) return "";
@@ -270,206 +263,164 @@ const Player = () => {
     }
   };
 
-  // Save state in sessionStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "playerState",
-        JSON.stringify({
-          currentSong,
-          isPlaying,
-          volume,
-          progress,
-          queue,
-          queueIndex,
-        })
-      );
-    }
-  }, [currentSong, isPlaying, volume, progress, queue, queueIndex]);
-
-  // Load the stored progress when the song starts playing
-  useEffect(() => {
-    if (!audioRef.current || !isHydrated || isLoadingRef.current) return;
-
-    if (currentSong && currentSong.downloadUrl) {
-      const audioUrl =
-        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
-        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
-
-      if (audioUrl && audioRef.current.src !== audioUrl) {
-        isLoadingRef.current = true;
-        
-        audioRef.current.pause();
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-
-        // Restore progress time after loading
-        audioRef.current.onloadedmetadata = () => {
-          if (!isNaN(audioRef.current.duration)) {
-            audioRef.current.currentTime =
-              (progress / 100) * audioRef.current.duration;
-          }
-          isLoadingRef.current = false;
-        };
-
-        // Don't auto-play - audio will be ready when user clicks play
-      }
-    }
-  }, [currentSong, isHydrated, progress, isPlaying]);
-
   // Check if next/prev buttons should be disabled
   const isQueueEmpty = !queue || queue.length === 0;
-
-  // Don't render bottom player if full-screen is active
-  if (showFullScreen && currentSong) {
-    return null;
-  }
 
   // Show loading state during hydration to prevent mismatch
   if (!isHydrated) {
     return (
-      <div className="relative w-full bg-background p-3 border-t flex flex-col">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <div className="h-14 w-14 bg-muted rounded-md animate-pulse" />
-            <div className="truncate">
-              <div className="h-4 bg-muted rounded animate-pulse mb-2 w-32" />
-              <div className="h-3 bg-muted rounded animate-pulse w-24" />
-            </div>
-          </div>
-          <div className="flex items-center gap-4 flex-1 justify-center">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-            <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-            <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-          </div>
-          <div className="hidden sm:flex items-center gap-2 flex-1 justify-end">
-            <div className="h-5 w-5 bg-muted rounded animate-pulse" />
-            <div className="h-2 w-24 bg-muted rounded animate-pulse" />
-          </div>
-        </div>
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
+  if (!currentSong) {
+    return null;
+  }
+
   return (
-    <div 
-      className="relative w-full bg-background p-3 border-t flex flex-col cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={() => currentSong && setShowFullScreen(true)}
-    >
+    <div className="absolute inset-0 bg-background z-50 flex flex-col">
       {/* Audio Element */}
       <audio ref={audioRef} onEnded={handleSongEnd} />
       
-
-      {/* Progress Bar */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <Slider
-          className="absolute -top-[1px] left-0 w-full h-[2px] rounded-none"
-          value={[localProgress]}
-          onValueChange={handleProgressChange}
-          max={100}
-          step={0.1} // Make it more precise
-        />
+      {/* Header */}
+      <div className="flex items-center justify-between p-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="text-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="h-6 w-6" />
+        </Button>
+        
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Playing from</p>
+          <p className="font-medium">Liked Songs</p>
+        </div>
+        
+        <div className="w-10" /> {/* Spacer for centering */}
       </div>
 
-      {/* Player Content */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: Song Info */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        {/* Album Art */}
+        <div className="w-80 h-80 mb-8 shadow-2xl">
           <img
             src={
               currentSong?.image?.[currentSong.image.length - 1]?.url ||
-              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yOCA0MkMzNS43MzM3IDQyIDQyIDM1LjczMzcgNDIgMjhDNDIgMjAuMjY2MyAzNS43MzM3IDE0IDI4IDE0QzIwLjI2NjMgMTQgMTQgMjAuMjY2MyAxNCAyOEMxNCAzNS43MzM3IDIwLjI2NjMgNDIgMjggNDJaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yNCAyMkwyNCAzNEwyOCAzMEwzMiAzNEwzMiAyMkwyNCAyMloiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"
+              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDMyMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjAgMjQwQzIwNS40NjQgMjQwIDI0MCAyMDUuNDY0IDI0MCAxNjBDMjQwIDExNC41MzYgMjA1LjQ2NCA4MCAxNjAgODBDMTE0LjUzNiA4MCA4MCAxMTQuNTM2IDgwIDE2MEM4MCAyMDUuNDY0IDExNC41MzYgMjQwIDE2MCAyNDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMzYgMTI4TDEzNiAxOTJMMTYwIDE3NkwxODQgMTkyTDE4NCAxMjhMMTM2IDEyOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"
             }
             alt="Album cover"
-            className="h-14 w-14 rounded-md"
+            className="w-full h-full rounded-lg object-cover"
           />
-          <div className="truncate">
-            <h3 className="font-semibold text-foreground truncate">
-              {currentSong?.name || "No Song Playing"}
-            </h3>
-            <p className="text-xs text-muted-foreground truncate">
-              {currentSong?.artists?.primary
-                ?.map((artist) => artist.name)
-                .join(", ") || "Artist Name"}
-            </p>
-          </div>
-          
-          {/* Like button */}
-          {currentSong && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleLike();
-            }}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-          >
-              <Heart 
-                className={`w-5 h-5 ${
-                  isSongLiked(currentSong.id) ? 'fill-red-500' : ''
-                }`} 
-              />
-            </Button>
-          )}
         </div>
 
-        {/* Center: Playback Controls */}
-        <div className="flex items-center gap-4 flex-1 justify-center">
+        {/* Song Info */}
+        <div className="text-center mb-8 max-w-md">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {currentSong?.name || "No Song Playing"}
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            {currentSong?.artists?.primary
+              ?.map((artist) => artist.name)
+              .join(", ") || "Artist Name"}
+          </p>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full max-w-md mb-8">
+          <Slider
+            value={[localProgress]}
+            onValueChange={handleProgressChange}
+            max={100}
+            step={0.1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-sm text-muted-foreground mt-2">
+            <span>{Math.floor((localProgress / 100) * (currentSong?.duration || 0) / 60)}:{(Math.floor((localProgress / 100) * (currentSong?.duration || 0)) % 60).toString().padStart(2, '0')}</span>
+            <span>{Math.floor((currentSong?.duration || 0) / 60)}:{(Math.floor(currentSong?.duration || 0) % 60).toString().padStart(2, '0')}</span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-6 mb-8">
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePreviousSong();
-            }}
+            onClick={handlePreviousSong}
             disabled={isQueueEmpty}
+            className="text-foreground hover:bg-muted"
           >
-            <SkipBack className="h-5 w-5" />
+            <SkipBack className="h-6 w-6" />
           </Button>
+          
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={() => {
               setHasUserInteracted(true);
               dispatch(togglePlayPause());
             }}
-            variant="outline"
             size="icon"
-            disabled={!currentSong}
+            className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90"
           >
             {isPlaying ? (
-              <Pause className="h-5 w-5" />
+              <Pause className="h-8 w-8" />
             ) : (
-              <Play className="h-5 w-5" />
+              <Play className="h-8 w-8 ml-1" />
             )}
           </Button>
+          
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNextSong();
-            }}
+            onClick={handleNextSong}
             disabled={isQueueEmpty}
+            className="text-foreground hover:bg-muted"
           >
-            <SkipForward className="h-5 w-5" />
+            <SkipForward className="h-6 w-6" />
           </Button>
         </div>
 
-        {/* Right: Volume Control */}
-        <div className="hidden sm:flex items-center gap-2 flex-1 justify-end" onClick={(e) => e.stopPropagation()}>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleLike}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <Heart 
+              className={`w-6 h-6 ${
+                isSongLiked(currentSong.id) ? 'fill-red-500' : ''
+              }`} 
+            />
+          </Button>
+          
+          <Button variant="outline" onClick={handleDownload}>
+            Download
+          </Button>
+        </div>
+      </div>
+
+      {/* Volume Control */}
+      <div className="p-6">
+        <div className="flex items-center gap-4 max-w-md mx-auto">
           <Volume2 className="h-5 w-5 text-muted-foreground" />
           <Slider
-            className="w-24"
+            className="flex-1"
             value={[volume]}
             onValueChange={(value) => dispatch(setVolume(value[0]))}
             max={100}
             step={1}
           />
+          <span className="text-sm text-muted-foreground w-12 text-right">
+            {volume}%
+          </span>
         </div>
       </div>
     </div>
   );
 };
 
-export default Player;
+export default FullScreenPlayer;

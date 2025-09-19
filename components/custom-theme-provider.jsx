@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
 import themeConfig from "@/lib/theme/theme-config.json";
 import { useTheme as DefaultUseTheme } from "next-themes";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext({
   theme: "default",
@@ -16,23 +16,21 @@ export function CustomThemeProvider({ children, defaultTheme = "default" }) {
 
   const { resolvedTheme } = DefaultUseTheme(); // Get current dark/light mode
 
-  // Avoid hydration mismatch
+  // Initialize theme immediately on mount
   useEffect(() => {
     setMounted(true);
-  }, []); // No need for myTheme dependency
-
-  useEffect(() => {
-    if (!mounted) return;
-
+    
+    // Apply theme immediately to prevent flash
     const storedTheme = localStorage.getItem("app-theme");
     if (storedTheme && themeConfig.themes.some((t) => t.name === storedTheme)) {
       setTheme(storedTheme);
     }
-  }, [mounted]); // Removed myTheme dependency
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
 
+    // Apply theme immediately to prevent flash
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("app-theme", theme);
 
@@ -54,7 +52,7 @@ export function CustomThemeProvider({ children, defaultTheme = "default" }) {
     // Ensure Tailwind applies dark mode correctly
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(resolvedTheme);
-  }, [theme, mounted, resolvedTheme]); // Removed myTheme dependency
+  }, [theme, mounted, resolvedTheme]);
 
   // Listen for dark mode changes
   useEffect(() => {
@@ -76,7 +74,7 @@ export function CustomThemeProvider({ children, defaultTheme = "default" }) {
 
     // Initial check
     handleDarkModeChange();
-  }, [theme, mounted, resolvedTheme]); // Removed media query listener (unnecessary)
+  }, [theme, mounted, resolvedTheme]);
 
   const value = {
     theme,

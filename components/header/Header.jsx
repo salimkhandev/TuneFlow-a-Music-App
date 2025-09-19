@@ -2,22 +2,30 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  fetchAlbums,
-  fetchArtists,
-  fetchPlaylists,
-  fetchSongs,
+    fetchAlbums,
+    fetchArtists,
+    fetchPlaylists,
+    fetchSongs,
 } from "@/lib/utils";
 import { debounce } from "lodash";
-import { Music, Search } from "lucide-react";
+import { LogOut, Music, Search, User } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
 import AlbumsList from "../albums-list/AlbumsList";
@@ -34,6 +42,7 @@ const Header = () => {
   const [query, setQuery] = useState("");
   const [isOpenSearchDialog, setIsOpenSearchDialog] = useState(false);
   const [limit] = useState(10);
+  const [imageError, setImageError] = useState(false);
 
   // Loading states
   const [isLoadingSongs, setIsLoadingSongs] = useState(false);
@@ -188,21 +197,43 @@ const Header = () => {
           <CustomThemeSwitcher />
 
           {session?.user ? (
-            <div className="flex items-center gap-2">
-              {session.user.image ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 overflow-hidden">
+                  {session.user.image && !imageError ? (
                 <img
                   src={session.user.image}
                   alt="avatar"
-                  className="w-8 h-8 rounded-full object-cover"
+                      className="w-full h-full rounded-full object-cover"
                   referrerPolicy="no-referrer"
                   loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : null}
-              <Button size="sm" variant="outline" onClick={() => signOut({ callbackUrl: "/" })}>Sign out</Button>
+                      onError={() => setImageError(true)}
+                      onLoad={() => setImageError(false)}
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session.user.email}
+                    </p>
             </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>Sign in</Button>
           )}

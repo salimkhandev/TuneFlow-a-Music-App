@@ -10,6 +10,7 @@ import { decodeHtmlEntities } from "@/lib/utils";
 import { AudioLines, Pause, Play } from "lucide-react";
 import { memo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import SongMenu from "../song-menu/SongMenu";
 
 // Memoized SongItem component to prevent unnecessary re-renders
 const SongItem = memo(({ 
@@ -18,7 +19,10 @@ const SongItem = memo(({
   currentSong, 
   isPlaying, 
   formatDuration, 
-  handlePlayPause 
+  handlePlayPause,
+  isLiked = false,
+  onToggleLike,
+  onDownload
 }) => {
   return (
     <div
@@ -63,6 +67,12 @@ const SongItem = memo(({
         ) : (
           <p className="text-sm">{formatDuration(song.duration)}</p>
         )}
+        <SongMenu
+          song={song}
+          isLiked={isLiked}
+          onToggleLike={onToggleLike}
+          onDownload={onDownload}
+        />
       </div>
     </div>
   );
@@ -70,7 +80,7 @@ const SongItem = memo(({
 
 SongItem.displayName = 'SongItem';
 
-export function SongList({ songs = [], grid = false }) {
+export function SongList({ songs = [], grid = false, likedSongs = [], onToggleLike, onDownload }) {
   const dispatch = useDispatch();
   const { currentSong, isPlaying, queue } = useSelector(
     (state) => state.player
@@ -124,6 +134,9 @@ export function SongList({ songs = [], grid = false }) {
           isPlaying={isPlaying}
           formatDuration={formatDuration}
           handlePlayPause={handlePlayPause}
+          isLiked={likedSongs.some(likedSong => likedSong.id === song.id)}
+          onToggleLike={onToggleLike}
+          onDownload={onDownload}
         />
       ))}
     </div>

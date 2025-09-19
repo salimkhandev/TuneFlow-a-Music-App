@@ -7,6 +7,7 @@ import { AudioLines, Clock, Heart, MoreHorizontal, Pause, Play } from "lucide-re
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import SongMenu from "../song-menu/SongMenu";
 
 const LikedSongs = () => {
   const dispatch = useDispatch();
@@ -73,6 +74,27 @@ const LikedSongs = () => {
     fetch(`/api/liked-songs?songId=${encodeURIComponent(songId)}`, { method: 'DELETE' })
       .then(() => setLikedSongs(prev => prev.filter(s => s.id !== songId)))
       .catch(() => {});
+  };
+
+  const handleToggleLike = (song) => {
+    handleRemoveFromLiked(song.id);
+  };
+
+  const handleDownload = (song) => {
+    if (!song.downloadUrl) return;
+    
+    const downloadUrl = song.downloadUrl.find(u => u.quality === "320kbps")?.url || 
+                       song.downloadUrl[song.downloadUrl.length - 1]?.url;
+    
+    if (downloadUrl) {
+      const params = new URLSearchParams({ url: downloadUrl, name: song.name || "song" });
+      const a = document.createElement("a");
+      a.href = `/api/download?${params.toString()}`;
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   };
 
 
@@ -181,24 +203,12 @@ const LikedSongs = () => {
               </div>
               
               <div className="col-span-6 flex items-center gap-3">
-                <div className="relative w-10 h-10 bg-muted rounded-md flex items-center justify-center group">
+                <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
                   <img
                     src={song.image?.[song.image.length - 1]?.url || '/placeholder-album.jpg'}
                     alt={song.name}
                     className="w-full h-full object-cover rounded-md"
                   />
-                  {/* Heart icon overlay */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute inset-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromLiked(song.id);
-                    }}
-                  >
-                    <Heart className="w-4 h-4 text-white fill-red-500" />
-                  </Button>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{song.name}</p>
@@ -214,12 +224,18 @@ const LikedSongs = () => {
                 {song.album?.name || "Unknown Album"}
               </div>
               
-              <div className="col-span-1 text-sm text-muted-foreground text-center">
+              <div className="col-span-1 flex items-center justify-center gap-2">
                 {currentSong?.id === song?.id ? (
-                  <AudioLines className="text-foreground mx-auto" />
+                  <AudioLines className="text-foreground" />
                 ) : (
-                  formatDuration(song.duration)
+                  <span className="text-sm text-muted-foreground">{formatDuration(song.duration)}</span>
                 )}
+                <SongMenu
+                  song={song}
+                  isLiked={true}
+                  onToggleLike={handleToggleLike}
+                  onDownload={handleDownload}
+                />
               </div>
             </div>
 
@@ -270,17 +286,13 @@ const LikedSongs = () => {
                       formatDuration(song.duration)
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromLiked(song.id);
-                    }}
-                  >
-                    <Heart className="w-4 h-4 fill-red-500" />
-                  </Button>
+                  <SongMenu
+                    song={song}
+                    isLiked={true}
+                    onToggleLike={handleToggleLike}
+                    onDownload={handleDownload}
+                    className="opacity-100"
+                  />
                 </div>
               </div>
             </div>
