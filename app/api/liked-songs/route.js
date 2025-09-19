@@ -15,7 +15,9 @@ export async function GET() {
     "select song_json as song from liked_songs where user_email = $1 order by liked_at desc",
     [session.user.email]
   );
-  return new Response(JSON.stringify({ items: rows.map(r => r.song) }), { status: 200 });
+  const items = rows.map(r => r.song);
+  console.log("[liked-songs][GET] fetched", items.length, "songs for", session.user.email);
+  return new Response(JSON.stringify({ items }), { status: 200 });
 }
 
 export async function POST(request) {
