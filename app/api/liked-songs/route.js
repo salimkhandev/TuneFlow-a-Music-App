@@ -5,7 +5,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -15,11 +15,42 @@ export async function GET() {
       return new Response(JSON.stringify({ items: [] }), { status: 200 });
     }
     await ensureSchema();
+    const { searchParams } = new URL(request.url);
+    const view = searchParams.get('view'); // ids | count | summary | full(default)
+
+    if (view === 'ids') {
+      const { rows } = await pool.query(
+        "select song_id from liked_songs where user_email = $1 order by liked_at desc",
+        [session.user.email]
+      );
+      const ids = rows.map(r => r.song_id);
+      return new Response(JSON.stringify({ ids }), { status: 200 });
+    }
+
+    if (view === 'count') {
+      const { rows } = await pool.query(
+        "select count(*)::int as count from liked_songs where user_email = $1",
+        [session.user.email]
+      );
+      return new Response(JSON.stringify({ count: rows[0]?.count ?? 0 }), { status: 200 });
+    }
+
     const { rows } = await pool.query(
       "select song_json as song from liked_songs where user_email = $1 order by liked_at desc",
       [session.user.email]
     );
     const items = rows.map(r => r.song);
+
+    if (view === 'summary') {
+      const summary = items.map(s => ({
+        id: s?.id,
+        name: s?.name,
+        duration: s?.duration,
+        artists: s?.artists?.primary?.map(a => a?.name) ?? [],
+      }));
+      return new Response(JSON.stringify({ items: summary }), { status: 200 });
+    }
+
     console.log("[liked-songs][GET] fetched", items.length, "songs for", session.user.email);
     return new Response(JSON.stringify({ items }), { status: 200 });
   } catch (err) {
