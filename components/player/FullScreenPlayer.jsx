@@ -2,23 +2,21 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
-    nextSong,
-    previousSong,
-    setProgress,
-    setVolume,
-    togglePlayPause,
+  nextSong,
+  previousSong,
+  setProgress,
+  togglePlayPause
 } from "@/lib/slices/playerSlice";
 import {
-    ArrowLeft,
-    Heart,
-    Pause,
-    Play,
-    SkipBack,
-    SkipForward,
-    Volume2
+  ArrowLeft,
+  Heart,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const FullScreenPlayer = ({ onClose }) => {
@@ -26,9 +24,7 @@ const FullScreenPlayer = ({ onClose }) => {
   const { data: session } = useSession();
   const { currentSong, isPlaying, volume, progress, queue, queueIndex } =
     useSelector((state) => state.player);
-  const audioRef = useRef(null);
-  const animationRef = useRef(null);
-  const isLoadingRef = useRef(false);
+  // No audio ref needed - uses bottom player's audio
   const [localProgress, setLocalProgress] = useState(0);
   const [likedSongs, setLikedSongs] = useState([]);
   const [isClient, setIsClient] = useState(false);
@@ -125,120 +121,79 @@ const FullScreenPlayer = ({ onClose }) => {
     }
   }, [isClient, currentSong, session, likedSongs]);
 
-  // Initialize audio element
+  // Get reference to the bottom player's audio element
+  const getAudioElement = () => {
+    return document.querySelector('audio');
+  };
+
+  // Auto-play when full-screen opens
   useEffect(() => {
-    if (!audioRef.current || isLoadingRef.current) return;
-
-    if (currentSong && currentSong.downloadUrl) {
-      const audioUrl =
-        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
-        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
-
-      if (audioUrl && audioRef.current.src !== audioUrl) {
-        isLoadingRef.current = true;
-        
-        // Pause and reset before loading new source
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-        
-        // Reset loading flag when load is complete
-        audioRef.current.onloadeddata = () => {
-          isLoadingRef.current = false;
-        };
-        
-        // Don't auto-play - only play when user explicitly clicks play
-        // Audio will be ready to play when user clicks the play button
+    if (isHydrated && currentSong && hasUserInteracted) {
+      // Ensure the song starts playing when full-screen opens
+      const audioElement = getAudioElement();
+      if (audioElement && isPlaying) {
+        const playPromise = audioElement.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("Auto-playing in full screen");
+            })
+            .catch((err) => {
+              if (err.name !== 'AbortError') {
+                console.error("Auto-play failed:", err);
+              }
+            });
+        }
       }
     }
-  }, [currentSong, isPlaying]);
+  }, [isHydrated, currentSong, hasUserInteracted, isPlaying]);
 
-  // Handle play/pause - only when user explicitly clicks play button
+  // Handle play/pause - control bottom player's audio
   useEffect(() => {
-    if (!audioRef.current || !isHydrated) return;
+    const audioElement = getAudioElement();
+    if (!audioElement || !isHydrated) return;
 
     if (isPlaying && hasUserInteracted) {
-      const playPromise = audioRef.current.play();
+      const playPromise = audioElement.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log("Audio started playing");
+            console.log("Audio started playing in full screen");
           })
           .catch((err) => {
-            // Only log non-abort errors
             if (err.name !== 'AbortError') {
               console.error("Playback failed:", err);
             }
           });
       }
     } else if (!isPlaying) {
-      audioRef.current.pause();
+      audioElement.pause();
     }
   }, [isPlaying, isHydrated, hasUserInteracted]);
 
   // Handle volume changes
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume / 100;
+    const audioElement = getAudioElement();
+    if (audioElement) {
+      audioElement.volume = volume / 100;
     }
   }, [volume]);
 
-  // Function to update progress smoothly
-  const updateProgress = () => {
-    if (!audioRef.current) return;
-
-    const duration = audioRef.current.duration;
-    if (!isNaN(duration)) {
-      const calculatedProgress =
-        (audioRef.current.currentTime / duration) * 100;
-      setLocalProgress(calculatedProgress);
-
-      // Update Redux only when there's a significant change (reducing unnecessary re-renders)
-      if (Math.abs(calculatedProgress - progress) > 0.5) {
-        dispatch(setProgress(calculatedProgress));
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(updateProgress);
-  };
-
-  // Start progress animation when song is playing
+  // Sync local progress with Redux progress
   useEffect(() => {
-    if (isPlaying) {
-      animationRef.current = requestAnimationFrame(updateProgress);
-    } else {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    }
+    setLocalProgress(progress);
+  }, [progress]);
 
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [isPlaying]);
-
-  // Sync local progress with Redux when seeking
+  // Handle progress seeking - control bottom player's audio directly
   const handleProgressChange = (value) => {
-    if (!audioRef.current) return;
-
-    const duration = audioRef.current.duration;
-    if (!isNaN(duration)) {
-      audioRef.current.currentTime = (value[0] / 100) * duration;
-    }
-
     setLocalProgress(value[0]);
     dispatch(setProgress(value[0]));
-  };
-
-  // Handle song ending - play next song
-  const handleSongEnd = () => {
-    dispatch(setProgress(0));
-    // If we have more songs in the queue, play the next one
-    if (queue.length > 1) {
-      dispatch(nextSong());
-    } else {
-      // If we don't have more songs, just stop playing
-      dispatch(togglePlayPause());
+    
+    // Update the audio element directly
+    const audioElement = getAudioElement();
+    if (audioElement && !isNaN(audioElement.duration)) {
+      const duration = audioElement.duration;
+      audioElement.currentTime = (value[0] / 100) * duration;
     }
   };
 
@@ -252,15 +207,9 @@ const FullScreenPlayer = ({ onClose }) => {
   // Handle previous song button click
   const handlePreviousSong = () => {
     setHasUserInteracted(true);
-    // If we're more than 3 seconds into the song, go back to the start of the current song
-    if (audioRef.current && audioRef.current.currentTime > 3) {
-      audioRef.current.currentTime = 0;
-      dispatch(setProgress(0));
-    } else {
-      // Otherwise go to the previous song
-      dispatch(setProgress(0));
-      dispatch(previousSong());
-    }
+    // Go to the previous song (bottom player handles the 3-second logic)
+    dispatch(setProgress(0));
+    dispatch(previousSong());
   };
 
   // Check if next/prev buttons should be disabled
@@ -280,33 +229,32 @@ const FullScreenPlayer = ({ onClose }) => {
   }
 
   return (
-    <div className="absolute inset-0 bg-background z-50 flex flex-col">
-      {/* Audio Element */}
-      <audio ref={audioRef} onEnded={handleSongEnd} />
+    <div className="absolute inset-0 bg-background z-50 flex flex-col overflow-hidden">
+      {/* No separate audio element - uses the bottom player's audio */}
       
       {/* Header */}
-      <div className="flex items-center justify-between p-6">
+      <div className="flex items-center justify-between p-4 sm:p-5 md:p-6 flex-shrink-0 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]">
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="text-foreground hover:bg-muted"
+          className="text-foreground hover:bg-muted h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
         </Button>
         
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">Playing from</p>
-          <p className="font-medium">Liked Songs</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Playing from</p>
+          <p className="text-base sm:text-lg font-medium">Liked Songs</p>
         </div>
         
-        <div className="w-10" /> {/* Spacer for centering */}
+        <div className="w-8 sm:w-10 md:w-12" /> {/* Spacer for centering */}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 min-h-0 max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-140px)] md:max-h-[calc(100vh-160px)]">
         {/* Album Art */}
-        <div className="w-80 h-80 mb-8 shadow-2xl">
+        <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 mb-3 sm:mb-4 shadow-2xl flex-shrink-0">
           <img
             src={
               currentSong?.image?.[currentSong.image.length - 1]?.url ||
@@ -318,11 +266,11 @@ const FullScreenPlayer = ({ onClose }) => {
         </div>
 
         {/* Song Info */}
-        <div className="text-center mb-8 max-w-md">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+        <div className="text-center mb-2 sm:mb-3 max-w-xs sm:max-w-md px-4 flex-shrink-0">
+          <h1 className="text-sm sm:text-lg md:text-xl font-bold text-foreground mb-1 line-clamp-2">
             {currentSong?.name || "No Song Playing"}
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground line-clamp-2">
             {currentSong?.artists?.primary
               ?.map((artist) => artist.name)
               .join(", ") || "Artist Name"}
@@ -330,7 +278,21 @@ const FullScreenPlayer = ({ onClose }) => {
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full max-w-md mb-8">
+        <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleLike}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
+          >
+            <Heart
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${isSongLiked(currentSong.id) ? 'fill-red-500' : ''
+                }`}
+            />
+          </Button>
+        </div>
+        
+        <div className="w-full max-w-xs sm:max-w-md mb-2 sm:mb-3 px-4 flex-shrink-0">
           <Slider
             value={[localProgress]}
             onValueChange={handleProgressChange}
@@ -338,22 +300,22 @@ const FullScreenPlayer = ({ onClose }) => {
             step={0.1}
             className="w-full"
           />
-          <div className="flex justify-between text-sm text-muted-foreground mt-2">
+          <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-1">
             <span>{Math.floor((localProgress / 100) * (currentSong?.duration || 0) / 60)}:{(Math.floor((localProgress / 100) * (currentSong?.duration || 0)) % 60).toString().padStart(2, '0')}</span>
             <span>{Math.floor((currentSong?.duration || 0) / 60)}:{(Math.floor(currentSong?.duration || 0) % 60).toString().padStart(2, '0')}</span>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-6 mb-8">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 md:mb-12 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePreviousSong}
             disabled={isQueueEmpty}
-            className="text-foreground hover:bg-muted"
+            className="text-foreground hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
           >
-            <SkipBack className="h-6 w-6" />
+            <SkipBack className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
           </Button>
           
           <Button
@@ -362,12 +324,12 @@ const FullScreenPlayer = ({ onClose }) => {
               dispatch(togglePlayPause());
             }}
             size="icon"
-            className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90"
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary hover:bg-primary/90 touch-manipulation"
           >
             {isPlaying ? (
-              <Pause className="h-8 w-8" />
+              <Pause className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
             ) : (
-              <Play className="h-8 w-8 ml-1" />
+              <Play className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 ml-0.5 sm:ml-1" />
             )}
           </Button>
           
@@ -376,49 +338,18 @@ const FullScreenPlayer = ({ onClose }) => {
             size="icon"
             onClick={handleNextSong}
             disabled={isQueueEmpty}
-            className="text-foreground hover:bg-muted"
+            className="text-foreground hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
           >
-            <SkipForward className="h-6 w-6" />
+            <SkipForward className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
           </Button>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleToggleLike}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-          >
-            <Heart 
-              className={`w-6 h-6 ${
-                isSongLiked(currentSong.id) ? 'fill-red-500' : ''
-              }`} 
-            />
-          </Button>
-          
-          <Button variant="outline" onClick={handleDownload}>
-            Download
-          </Button>
-        </div>
+
       </div>
 
       {/* Volume Control */}
-      <div className="p-6">
-        <div className="flex items-center gap-4 max-w-md mx-auto">
-          <Volume2 className="h-5 w-5 text-muted-foreground" />
-          <Slider
-            className="flex-1"
-            value={[volume]}
-            onValueChange={(value) => dispatch(setVolume(value[0]))}
-            max={100}
-            step={1}
-          />
-          <span className="text-sm text-muted-foreground w-12 text-right">
-            {volume}%
-          </span>
-        </div>
-      </div>
+ 
     </div>
   );
 };

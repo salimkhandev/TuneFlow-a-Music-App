@@ -19,6 +19,7 @@ import {
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import FullScreenPlayer from "./FullScreenPlayer";
 
 const Player = () => {
   const dispatch = useDispatch();
@@ -52,20 +53,30 @@ const Player = () => {
     document.addEventListener('click', handleUserInteraction);
     document.addEventListener('touchstart', handleUserInteraction);
     document.addEventListener('keydown', handleUserInteraction);
+    window.addEventListener('userInteraction', handleUserInteraction);
 
     return () => {
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('userInteraction', handleUserInteraction);
     };
   }, []);
 
-  // Show full-screen player when song starts playing
+  // Show full-screen player when a song is selected and start playing
   useEffect(() => {
-    if (isPlaying && currentSong && hasUserInteracted) {
+    if (currentSong && hasUserInteracted) {
       setShowFullScreen(true);
+      // Start playing the song immediately when full-screen opens
+      dispatch(togglePlayPause());
     }
-  }, [isPlaying, currentSong, hasUserInteracted]);
+  }, [currentSong, hasUserInteracted, dispatch]);
+
+  // Handle play button click
+  const handlePlayClick = () => {
+    setHasUserInteracted(true);
+    dispatch(togglePlayPause());
+  };
 
   // Load liked songs from DB
   useEffect(() => {
@@ -320,9 +331,23 @@ const Player = () => {
   // Check if next/prev buttons should be disabled
   const isQueueEmpty = !queue || queue.length === 0;
 
-  // Don't render bottom player if full-screen is active
+  // Show full-screen player if active
   if (showFullScreen && currentSong) {
-    return null;
+    return (
+      <>
+        {/* Keep the bottom player's audio element active but hidden */}
+        <div className="hidden">
+          <audio ref={audioRef} onEnded={handleSongEnd} />
+        </div>
+        <FullScreenPlayer 
+          onClose={() => {
+            setShowFullScreen(false);
+            // Ensure the song continues playing in the background
+            // The bottom player will automatically resume playing
+          }}
+        />
+      </>
+    );
   }
 
   // Show loading state during hydration to prevent mismatch
@@ -330,7 +355,7 @@ const Player = () => {
     return (
       <div className="relative w-full bg-background p-3 border-t flex flex-col">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className="flex items-center  gap-4 min-w-0 flex-1">
             <div className="h-14 w-14 bg-muted rounded-md animate-pulse" />
             <div className="truncate">
               <div className="h-4 bg-muted rounded animate-pulse mb-2 w-32" />
@@ -430,8 +455,7 @@ const Player = () => {
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              setHasUserInteracted(true);
-              dispatch(togglePlayPause());
+              handlePlayClick();
             }}
             variant="outline"
             size="icon"

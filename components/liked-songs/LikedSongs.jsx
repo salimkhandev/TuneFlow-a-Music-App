@@ -66,6 +66,11 @@ const LikedSongs = () => {
         }
       }
       dispatch(setProgress(0));
+      
+      // Trigger user interaction for full-screen player
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userInteraction'));
+      }
     }
   };
 

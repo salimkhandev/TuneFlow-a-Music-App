@@ -116,6 +116,11 @@ export function SongList({ songs = [], grid = false, likedSongs = [], onToggleLi
         }
       }
       dispatch(setProgress(0)); // Reset progress in Redux
+      
+      // Trigger user interaction for full-screen player
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userInteraction'));
+      }
     }
   }, [currentSong?.id, dispatch, queue, songs]);
 
