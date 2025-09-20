@@ -111,15 +111,13 @@ export default function RootLayout({ children }) {
                           <Sidebar />
                         </div>
                       </div>
-                      <div className="px-4 pt-4">
-                        <PWAInstallButton />
-                      </div>
                       {children}
                     </div>
                   </ResizablePanel>
                 </ResizablePanelGroup>
                 <Player />
               </div>
+              <PWAInstallButton />
             </CustomThemeProvider>
           </ThemeProvider>
           </AppSessionProvider>
