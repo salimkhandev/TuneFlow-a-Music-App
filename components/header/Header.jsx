@@ -2,32 +2,36 @@
 
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    fetchAlbums,
-    fetchArtists,
-    fetchPlaylists,
-    fetchSongs,
+  addToSearchHistory,
+  clearSearchHistory,
+  fetchAlbums,
+  fetchArtists,
+  fetchPlaylists,
+  fetchSongs,
+  getSearchHistory,
+  removeFromSearchHistory,
 } from "@/lib/utils";
 import { debounce } from "lodash";
-import { LogOut, Music, Search, User } from "lucide-react";
+import { Clock, LogOut, Music, Search, User, X } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AlbumsList from "../albums-list/AlbumsList";
 import { ArtistCard } from "../artist-card/ArtistCard";
 import CustomThemeSwitcher from "../CustomThemeSwitcher";
@@ -43,6 +47,10 @@ const Header = () => {
   const [isOpenSearchDialog, setIsOpenSearchDialog] = useState(false);
   const [limit] = useState(10);
   const [imageError, setImageError] = useState(false);
+  
+  // Search history states
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Loading states
   const [isLoadingSongs, setIsLoadingSongs] = useState(false);
@@ -55,6 +63,12 @@ const Header = () => {
   const [playlists, setPlaylists] = useState([]);
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
+
+  // Load search history when component mounts
+  useEffect(() => {
+    const history = getSearchHistory();
+    setSearchSuggestions(history);
+  }, []);
 
   // Fetch songs
   const handleFetchSongs = useCallback(
@@ -135,6 +149,9 @@ const Header = () => {
   const debouncedSearch = useCallback(
     debounce((searchQuery) => {
       if (searchQuery.trim()) {
+        // Add to search history
+        addToSearchHistory(searchQuery);
+        
         handleFetchSongs(searchQuery);
         handleFetchPlaylists(searchQuery);
         handleFetchArtists(searchQuery);
@@ -154,6 +171,40 @@ const Header = () => {
       handleFetchAlbums,
     ]
   );
+
+  // Handle search input change with suggestions
+  const handleSearchChange = (value) => {
+    setQuery(value);
+    
+    if (value.trim()) {
+      // Filter suggestions based on current input
+      const history = getSearchHistory();
+      const filtered = history.filter(item => 
+        item.toLowerCase().includes(value.toLowerCase())
+      );
+      setSearchSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+    
+    debouncedSearch(value);
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    debouncedSearch(suggestion);
+  };
+
+  // Handle suggestion remove
+  const handleRemoveSuggestion = (suggestion, e) => {
+    e.stopPropagation();
+    removeFromSearchHistory(suggestion);
+    const updatedHistory = getSearchHistory();
+    setSearchSuggestions(updatedHistory);
+  };
 
   return (
     <header className="flex flex-col md:flex-row items-center justify-between p-3 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -245,6 +296,7 @@ const Header = () => {
         onOpenChange={() => {
           setIsOpenSearchDialog(false);
           setQuery("");
+          setShowSuggestions(false);
           // Reset all results when dialog closes
           setSongs([]);
           setPlaylists([]);
@@ -260,15 +312,51 @@ const Header = () => {
               Search songs, artists, or playlists...
             </DialogDescription>
           </DialogHeader>
-          <Input
-            placeholder="Type songs, artists, or playlists or search..."
-            value={query}
-            onChange={(e) => {
-              const searchQuery = e.target.value;
-              setQuery(searchQuery);
-              debouncedSearch(searchQuery);
-            }}
-          />
+          <div className="relative">
+            <Input
+              placeholder="Type songs, artists, or playlists or search..."
+              value={query}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+            
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto mt-1">
+                <div className="p-2 text-xs text-gray-500 dark:text-gray-400 border-b">
+                  Recent Searches
+                </div>
+                {searchSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      {suggestion}
+                    </span>
+                    <button
+                      onClick={(e) => handleRemoveSuggestion(suggestion, e)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <div className="p-2 border-t">
+                  <button
+                    onClick={() => {
+                      clearSearchHistory();
+                      setSearchSuggestions([]);
+                    }}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    Clear History
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <ScrollArea className="h-80 flex flex-col gap-4">
             {/* Songs Section */}
             <div className="flex flex-col gap-2">
