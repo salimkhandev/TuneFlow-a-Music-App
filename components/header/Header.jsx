@@ -36,8 +36,8 @@ import AlbumsList from "../albums-list/AlbumsList";
 import { ArtistCard } from "../artist-card/ArtistCard";
 import CustomThemeSwitcher from "../CustomThemeSwitcher";
 import Loader from "../loader/Loader";
-import { ModeToggle } from "../mode-toggler/ModeToggler";
 import { PlaylistCard } from "../playlist-card/PlaylistCard";
+import { ModeToggle } from "../playlist-crousel/mode-toggler/ModeToggler";
 import { SongList } from "../song-list/SongList";
 
 const Header = () => {
@@ -313,9 +313,9 @@ const Header = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="relative">
-            <Input
-              placeholder="Type songs, artists, or playlists or search..."
-              value={query}
+          <Input
+            placeholder="Type songs, artists, or playlists or search..."
+            value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
             

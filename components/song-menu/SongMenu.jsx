@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Download, Heart, MoreHorizontal } from "lucide-react";
+import { CheckCircle, Download, HardDrive, Heart, MoreHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 
@@ -16,6 +16,9 @@ const SongMenu = ({
   isLiked = false, 
   onToggleLike, 
   onDownload,
+  onStoreOffline,
+  isOffline = false,
+  isStoring = false,
   className = "" 
 }) => {
   const { data: session } = useSession();
@@ -35,6 +38,12 @@ const SongMenu = ({
   const handleDownload = (e) => {
     e.stopPropagation();
     onDownload?.(song);
+    setIsOpen(false);
+  };
+
+  const handleStoreOffline = (e) => {
+    e.stopPropagation();
+    onStoreOffline?.(song);
     setIsOpen(false);
   };
 
@@ -68,6 +77,24 @@ const SongMenu = ({
               <Download className="mr-2 h-4 w-4" />
               <span>Download</span>
             </DropdownMenuItem>
+            {song?.downloadUrl && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={handleStoreOffline}
+                disabled={isStoring}
+              >
+                {isStoring ? (
+                  <div className="mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                ) : isOffline ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <HardDrive className="mr-2 h-4 w-4" />
+                )}
+                <span>
+                  {isStoring ? 'Storing...' : isOffline ? 'Available Offline' : 'Store Offline'}
+                </span>
+              </DropdownMenuItem>
+            )}
           </>
         ) : (
           <DropdownMenuItem

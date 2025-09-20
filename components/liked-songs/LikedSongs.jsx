@@ -2,8 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { clearQueue, playSong, setProgress, togglePlayPause } from "@/lib/slices/playerSlice";
-import { decodeHtmlEntities } from "@/lib/utils";
-import { AudioLines, Clock, Heart, Pause, Play } from "lucide-react";
+import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
+import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,6 +15,13 @@ const LikedSongs = () => {
   const [likedSongs, setLikedSongs] = useState([]);
   const { data: session } = useSession();
   const [isClient, setIsClient] = useState(false);
+  
+  // Offline audio states
+  const [offlineAudio, setOfflineAudio] = useState([]);
+  const [offlineStorageSize, setOfflineStorageSize] = useState(0);
+  const [offlineCount, setOfflineCount] = useState(0);
+  const [isStoring, setIsStoring] = useState(false);
+  const [storingSongId, setStoringSongId] = useState(null);
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -38,6 +45,22 @@ const LikedSongs = () => {
       .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
       .catch(() => setLikedSongs([]));
   }, [isClient, session?.user?.email]);
+
+  // Load offline audio data
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const loadOfflineData = async () => {
+      const audio = await getAllOfflineAudio();
+      const size = await getOfflineAudioSize();
+      const count = await getOfflineAudioCount();
+      setOfflineAudio(audio);
+      setOfflineStorageSize(size);
+      setOfflineCount(count);
+    };
+    
+    loadOfflineData();
+  }, [isClient]);
 
   const formatDuration = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -74,11 +97,30 @@ const LikedSongs = () => {
     }
   };
 
-  const handleRemoveFromLiked = (songId) => {
+  const handleRemoveFromLiked = async (songId) => {
     if (!isClient || !session?.user) return;
-    fetch(`/api/liked-songs?songId=${encodeURIComponent(songId)}`, { method: 'DELETE' })
-      .then(() => setLikedSongs(prev => prev.filter(s => s.id !== songId)))
-      .catch(() => {});
+    
+    try {
+      // Remove from liked songs
+      await fetch(`/api/liked-songs?songId=${encodeURIComponent(songId)}`, { method: 'DELETE' });
+      setLikedSongs(prev => prev.filter(s => s.id !== songId));
+      
+      // Also remove from offline storage if it exists
+      const isOffline = await isAudioOffline(songId);
+      if (isOffline) {
+        await removeAudioOffline(songId);
+        // Refresh offline data
+        const audio = await getAllOfflineAudio();
+        const size = await getOfflineAudioSize();
+        const count = await getOfflineAudioCount();
+        setOfflineAudio(audio);
+        setOfflineStorageSize(size);
+        setOfflineCount(count);
+        console.log('🗑️ Song removed from both liked songs and offline storage');
+      }
+    } catch (error) {
+      console.error('❌ Error removing song from liked songs:', error);
+    }
   };
 
   const handleToggleLike = (song) => {
@@ -99,6 +141,72 @@ const LikedSongs = () => {
       document.body.appendChild(a);
       a.click();
       a.remove();
+    }
+  };
+
+  // Store audio offline
+  const handleStoreAudioOffline = async (song) => {
+    if (!song?.id || !song?.downloadUrl) {
+      console.error('❌ Song missing required data for offline storage');
+      return;
+    }
+    
+    setIsStoring(true);
+    setStoringSongId(song.id);
+    
+    try {
+      console.log('🌐 Starting offline storage for:', song.name);
+      const success = await storeAudioOffline(song);
+      
+      if (success) {
+        // Refresh offline data
+        const audio = await getAllOfflineAudio();
+        const size = await getOfflineAudioSize();
+        const count = await getOfflineAudioCount();
+        setOfflineAudio(audio);
+        setOfflineStorageSize(size);
+        setOfflineCount(count);
+        console.log('✅ Audio stored offline successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error storing audio offline:', error);
+    } finally {
+      setIsStoring(false);
+      setStoringSongId(null);
+    }
+  };
+
+  // Remove audio from offline storage
+  const handleRemoveAudioOffline = async (songId) => {
+    try {
+      const success = await removeAudioOffline(songId);
+      if (success) {
+        // Refresh offline data
+        const audio = await getAllOfflineAudio();
+        const size = await getOfflineAudioSize();
+        const count = await getOfflineAudioCount();
+        setOfflineAudio(audio);
+        setOfflineStorageSize(size);
+        setOfflineCount(count);
+        console.log('✅ Audio removed from offline storage');
+      }
+    } catch (error) {
+      console.error('❌ Error removing audio from offline storage:', error);
+    }
+  };
+
+  // Clear all offline audio
+  const handleClearAllOffline = async () => {
+    try {
+      const success = await clearAllOfflineAudio();
+      if (success) {
+        setOfflineAudio([]);
+        setOfflineStorageSize(0);
+        setOfflineCount(0);
+        console.log('✅ All offline audio cleared');
+      }
+    } catch (error) {
+      console.error('❌ Error clearing offline audio:', error);
     }
   };
 
@@ -157,8 +265,36 @@ const LikedSongs = () => {
           <Play className="w-6 h-6 mr-2" />
           Play
         </Button>
+      </div>
+
+      {/* Offline Audio Storage Section */}
+      <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HardDrive className="w-5 h-5 text-blue-500" />
+            <h3 className="font-semibold">Offline Audio Storage</h3>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {offlineStorageSize} MB used
+          </div>
+        </div>
         
-    
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleClearAllOffline()}
+            disabled={offlineCount === 0}
+            className="text-red-500 hover:text-red-700"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear All Offline
+          </Button>
+        </div>
+        
+        <div className="text-sm text-muted-foreground">
+          {offlineCount} audio files available offline
+        </div>
       </div>
 
       {/* Songs List */}
@@ -174,14 +310,18 @@ const LikedSongs = () => {
         </div>
 
         {/* Songs */}
-        {likedSongs.map((song, index) => (
-          <Card 
-            key={song.id} 
-            className={`group hover:bg-muted/50 transition-colors cursor-pointer ${
-              currentSong?.id === song.id && "bg-muted/50"
-            }`}
-            onClick={() => handlePlayPause(song, index)}
-          >
+        {likedSongs.map((song, index) => {
+          const isOffline = offlineAudio.some(audio => audio.songId === song.id);
+          const isStoringThis = storingSongId === song.id;
+          
+          return (
+            <Card 
+              key={song.id} 
+              className={`group hover:bg-muted/50 transition-colors cursor-pointer ${
+                currentSong?.id === song.id && "bg-muted/50"
+              }`}
+              onClick={() => handlePlayPause(song, index)}
+            >
             {/* Desktop Layout */}
             <div className="hidden md:grid grid-cols-10 gap-4 items-center p-4">
               <div    onClick={(e) => {
@@ -233,11 +373,38 @@ const LikedSongs = () => {
                 ) : (
                   <span className="text-sm text-muted-foreground">{formatDuration(song.duration)}</span>
                 )}
+                
+                {/* Offline indicators */}
+                <div className="flex items-center gap-1">
+                  {isOffline && (
+                    <CheckCircle className="w-4 h-4 text-green-500" title="Available offline" />
+                  )}
+                  {isStoringThis && (
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  {!isOffline && !isStoringThis && song.downloadUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStoreAudioOffline(song);
+                      }}
+                      className="text-blue-500 hover:text-blue-700 p-1 h-6 w-6"
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                
                 <SongMenu
                   song={song}
                   isLiked={true}
                   onToggleLike={handleToggleLike}
                   onDownload={handleDownload}
+                  onStoreOffline={handleStoreAudioOffline}
+                  isOffline={isOffline}
+                  isStoring={isStoringThis}
                 />
               </div>
             </div>
@@ -289,18 +456,46 @@ const LikedSongs = () => {
                       formatDuration(song.duration)
                     )}
                   </div>
+                  
+                  {/* Offline indicators for mobile */}
+                  <div className="flex items-center gap-1">
+                    {isOffline && (
+                      <CheckCircle className="w-4 h-4 text-green-500" title="Available offline" />
+                    )}
+                    {isStoringThis && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {!isOffline && !isStoringThis && song.downloadUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStoreAudioOffline(song);
+                        }}
+                        className="text-blue-500 hover:text-blue-700 p-1 h-6 w-6"
+                      >
+                        <Download className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                  
                   <SongMenu
                     song={song}
                     isLiked={true}
                     onToggleLike={handleToggleLike}
                     onDownload={handleDownload}
+                    onStoreOffline={handleStoreAudioOffline}
+                    isOffline={isOffline}
+                    isStoring={isStoringThis}
                     className="opacity-100"
                   />
                 </div>
               </div>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Empty State (if no liked songs) */}
