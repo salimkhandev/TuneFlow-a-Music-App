@@ -26,11 +26,13 @@ const SongItem = memo(({
 }) => {
   return (
     <div
-      className={`flex items-center justify-between p-3 group rounded-md ${
+      onClick={() => handlePlayPause(song, index)}
+
+      className={`flex items-center justify-between cursor-pointer p-3 group rounded-md ${
         currentSong?.id === song.id && "bg-muted/50"
       } hover:bg-muted/50 transition-colors`}
     >
-      <div className="flex items-center gap-2">
+      <div  className="flex items-center gap-2">
         <div className="relative">
           <img
             src={song.image[song.image.length - 1].url}
@@ -43,7 +45,6 @@ const SongItem = memo(({
             className={`absolute inset-0 m-auto opacity-0 ${
               currentSong?.id === song.id && "opacity-100"
             } group-hover:opacity-100 transition-opacity`}
-            onClick={() => handlePlayPause(song, index)}
           >
             {currentSong?.id === song.id && isPlaying ? (
               <Pause className="h-5 w-5" />
