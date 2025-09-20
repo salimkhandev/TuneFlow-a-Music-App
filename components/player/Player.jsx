@@ -395,6 +395,10 @@ const Player = () => {
           step={0.1} // Make it more precise
         />
       </div>
+          <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-1">
+            <span>{Math.floor((localProgress / 100) * (currentSong?.duration || 0) / 60)}:{(Math.floor((localProgress / 100) * (currentSong?.duration || 0)) % 60).toString().padStart(2, '0')}</span>
+            <span>{Math.floor((currentSong?.duration || 0) / 60)}:{(Math.floor(currentSong?.duration || 0) % 60).toString().padStart(2, '0')}</span>
+          </div>
 
       {/* Player Content */}
       <div className="flex items-center justify-between gap-4">
@@ -420,23 +424,7 @@ const Player = () => {
           </div>
           
           {/* Like button */}
-          {currentSong && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleLike();
-            }}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-          >
-              <Heart 
-                className={`w-5 h-5 ${
-                  isSongLiked(currentSong.id) ? 'fill-red-500' : ''
-                }`} 
-              />
-            </Button>
-          )}
+
         </div>
 
         {/* Center: Playback Controls */}

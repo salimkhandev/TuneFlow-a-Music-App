@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { clearQueue, playSong, setProgress, togglePlayPause } from "@/lib/slices/playerSlice";
 import { decodeHtmlEntities } from "@/lib/utils";
-import { AudioLines, Clock, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
+import { AudioLines, Clock, Heart, Pause, Play } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -158,9 +158,7 @@ const LikedSongs = () => {
           Play
         </Button>
         
-        <Button variant="outline" size="icon" className="rounded-full">
-          <MoreHorizontal className="w-5 h-5" />
-        </Button>
+    
       </div>
 
       {/* Songs List */}
@@ -186,7 +184,10 @@ const LikedSongs = () => {
           >
             {/* Desktop Layout */}
             <div className="hidden md:grid grid-cols-10 gap-4 items-center p-4">
-              <div className="col-span-1 text-sm text-muted-foreground group-hover:hidden">
+              <div    onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayPause(song, index);
+                  }} className="col-span-1 text-sm text-muted-foreground group-hover:hidden">
                 {index + 1}
               </div>
               <div className="col-span-1 hidden group-hover:block">
@@ -194,10 +195,7 @@ const LikedSongs = () => {
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlayPause(song, index);
-                  }}
+               
                 >
                   {currentSong?.id === song.id && isPlaying ? (
                     <Pause className="w-4 h-4" />

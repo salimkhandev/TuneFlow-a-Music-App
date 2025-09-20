@@ -229,6 +229,7 @@ const FullScreenPlayer = ({ onClose }) => {
   }
 
   return (
+    
     <div className="absolute inset-0 bg-background z-50 flex flex-col overflow-hidden">
       {/* No separate audio element - uses the bottom player's audio */}
       

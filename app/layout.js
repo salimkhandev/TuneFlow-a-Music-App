@@ -2,6 +2,7 @@ import { CustomThemeProvider } from "@/components/custom-theme-provider";
 import Header from "@/components/header/Header";
 import { NavigationLoader } from "@/components/navigation/NavigationLoader";
 import Player from "@/components/player/Player";
+import PWAInstallButton from "@/components/pwa-install/PWAInstallButton";
 import { RoutePrefetcher } from "@/components/RoutePrefetcher";
 import ServiceWorker from "@/components/ServiceWorker";
 import AppSessionProvider from "@/components/session-provider/SessionProvider";
@@ -35,6 +36,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* PWA Meta Tags */}
+        <link rel="manifest" href="/manifest" />
+        <meta name="theme-color" content="#1a1a1a" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="TuneFlow" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+        <link rel="icon" href="/icons/favicon.ico" />
+        
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -98,6 +110,9 @@ export default function RootLayout({ children }) {
                         <div className="w-full py-2 px-4 bg-card border-b">
                           <Sidebar />
                         </div>
+                      </div>
+                      <div className="px-4 pt-4">
+                        <PWAInstallButton />
                       </div>
                       {children}
                     </div>
