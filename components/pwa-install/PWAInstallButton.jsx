@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 const InstallPWAButton = () => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isInstalled, setIsInstalled] = useState(false);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        // Ensure we're on the client side
+        setIsClient(true);
+        
         // Check if app is already installed
         const checkInstalled = () => {
-            if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+            if (typeof window !== 'undefined' && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true)) {
                 setIsInstalled(true);
             }
         };
@@ -20,23 +24,27 @@ const InstallPWAButton = () => {
             e.preventDefault(); // prevent auto prompt
             setDeferredPrompt(e);
         };
-        window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        
+        if (typeof window !== 'undefined') {
+            window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-        // Listen for appinstalled event
-        const handleAppInstalled = () => {
-            setIsInstalled(true);
-            setDeferredPrompt(null);
-        };
-        window.addEventListener("appinstalled", handleAppInstalled);
+            // Listen for appinstalled event
+            const handleAppInstalled = () => {
+                setIsInstalled(true);
+                setDeferredPrompt(null);
+            };
+            window.addEventListener("appinstalled", handleAppInstalled);
 
-        return () => {
-            window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-            window.removeEventListener("appinstalled", handleAppInstalled);
-        };
+            return () => {
+                window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+                window.removeEventListener("appinstalled", handleAppInstalled);
+            };
+        }
     }, []);
 
     // iOS install instructions (for Safari)
     const isiOS = () => {
+        if (typeof window === 'undefined') return false;
         const userAgent = window.navigator.userAgent.toLowerCase();
         return /iphone|ipad|ipod/.test(userAgent) && !window.MSStream;
     };
@@ -51,6 +59,9 @@ const InstallPWAButton = () => {
         }
     };
 
+    // Don't render on server side
+    if (!isClient) return null;
+    
     if (isInstalled) return null; // hide button if already installed
 
     return (
