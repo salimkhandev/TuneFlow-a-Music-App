@@ -1,6 +1,7 @@
 import { CustomThemeProvider } from "@/components/custom-theme-provider";
 import Header from "@/components/header/Header";
 import { NavigationLoader } from "@/components/navigation/NavigationLoader";
+import { NetworkDetector } from '@/components/NetworkDetector/NetworkDetector';
 import Player from "@/components/player/Player";
 import PWAInstallButton from "@/components/pwa-install/PWAInstallButton";
 import { RoutePrefetcher } from "@/components/RoutePrefetcher";
@@ -39,9 +40,13 @@ export default function RootLayout({ children }) {
         {/* PWA Meta Tags */}
         <link rel="manifest" href="/manifest" />
         <meta name="theme-color" content="#1a1a1a" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+
+        {/* Modern PWA Meta Tags */}
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TuneFlow" />
+
+        {/* Icons */}
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
@@ -50,27 +55,29 @@ export default function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                const theme = localStorage.getItem('theme') || 'system';
-                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                const resolvedTheme = theme === 'system' ? systemTheme : theme;
-                
-                if (resolvedTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.documentElement.style.colorScheme = 'dark';
-                } else {
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'system';
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const resolvedTheme = theme === 'system' ? systemTheme : theme;
+                  
+                  if (resolvedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
+                  } else {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.style.colorScheme = 'light';
+                  }
+                  
+                  // Apply custom theme if available
+                  const appTheme = localStorage.getItem('app-theme') || 'default';
+                  document.documentElement.setAttribute('data-theme', appTheme);
+                } catch (e) {
+                  // Fallback to light theme if localStorage is not available
                   document.documentElement.classList.add('light');
                   document.documentElement.style.colorScheme = 'light';
                 }
-                
-                // Apply custom theme if available
-                const appTheme = localStorage.getItem('app-theme') || 'default';
-                document.documentElement.setAttribute('data-theme', appTheme);
-              } catch (e) {
-                // Fallback to light theme if localStorage is not available
-                document.documentElement.classList.add('light');
-                document.documentElement.style.colorScheme = 'light';
-              }
+              })();
             `,
           }}
         />
@@ -89,6 +96,7 @@ export default function RootLayout({ children }) {
             <CustomThemeProvider defaultTheme="default">
               <NavigationLoader />
               <RoutePrefetcher />
+              <NetworkDetector />
               <div className="flex flex-col h-dvh">
                 <Header />
                 <ResizablePanelGroup

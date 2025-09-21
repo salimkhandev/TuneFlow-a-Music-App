@@ -50,9 +50,17 @@ const routes = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Check if screen is mobile size
   useEffect(() => {
+    if (!isClient) return;
+    
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -65,7 +73,7 @@ export function Sidebar() {
 
     // Clean up
     return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
+  }, [isClient]);
 
   return (
     <div className="flex flex-col h-full bg-card w-full overflow-auto scrollbar-hidden">

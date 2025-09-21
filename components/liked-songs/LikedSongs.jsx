@@ -211,7 +211,7 @@ const LikedSongs = () => {
   };
 
 
-  // Show loading state during hydration
+  // Show consistent loading state during hydration
   if (!isClient) {
     return (
       <div className="p-6 space-y-6">
@@ -226,9 +226,59 @@ const LikedSongs = () => {
             </div>
             <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-              <span>Loading...</span>
+              <span>0 songs</span>
             </div>
           </div>
+        </div>
+        
+        {/* Action Buttons - Show but disabled */}
+        <div className="flex items-center justify-center sm:justify-start gap-4">
+          <Button 
+            size="lg" 
+            className="rounded-full bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+            disabled
+          >
+            <Play className="w-6 h-6 mr-2" />
+            Play
+          </Button>
+        </div>
+
+        {/* Offline Audio Storage Section - Show but empty */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold">Offline Audio Storage</h3>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              0 MB used
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="text-red-500 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All Offline
+            </Button>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            0 audio files available offline
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="text-center py-12">
+          <Heart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No liked songs yet</h3>
+          <p className="text-muted-foreground">
+            Songs you like will appear here
+          </p>
         </div>
       </div>
     );
@@ -315,13 +365,13 @@ const LikedSongs = () => {
           const isStoringThis = storingSongId === song.id;
           
           return (
-            <Card 
-              key={song.id} 
-              className={`group hover:bg-muted/50 transition-colors cursor-pointer ${
-                currentSong?.id === song.id && "bg-muted/50"
-              }`}
-              onClick={() => handlePlayPause(song, index)}
-            >
+          <Card 
+            key={song.id} 
+            className={`group hover:bg-muted/50 transition-colors cursor-pointer ${
+              currentSong?.id === song.id && "bg-muted/50"
+            }`}
+            onClick={() => handlePlayPause(song, index)}
+          >
             {/* Desktop Layout */}
             <div className="hidden md:grid grid-cols-10 gap-4 items-center p-4">
               <div    onClick={(e) => {

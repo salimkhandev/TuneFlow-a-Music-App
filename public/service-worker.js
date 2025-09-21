@@ -50,7 +50,7 @@ self.addEventListener('activate', (event) => {
 
 // Updated fetch event handler with proper dynamic caching
 self.addEventListener('fetch', (event) => {
-  console.log('🚀 Fetch event:', event.request.url);
+//   console.log('🚀 Fetch event:', event.request.url);
 
   // Skip non-GET requests and non-same-origin requests
   if (
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        console.log('✅ Serving from Cache:', event.request.url);
+        // console.log('✅ Serving from Cache:', event.request.url);
         return cachedResponse;
       }
 
@@ -82,7 +82,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
-              console.log('📥 Cached new resource:', event.request.url);
+              // console.log('📥 Cached new resource:', event.request.url);
             })
             .catch((error) => {
               console.error('❌ Cache put failed:', error);

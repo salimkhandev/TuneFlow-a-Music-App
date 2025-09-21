@@ -51,6 +51,7 @@ const Header = () => {
   // Search history states
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // Loading states
   const [isLoadingSongs, setIsLoadingSongs] = useState(false);
@@ -64,11 +65,17 @@ const Header = () => {
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
 
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Load search history when component mounts
   useEffect(() => {
+    if (!isClient) return;
     const history = getSearchHistory();
     setSearchSuggestions(history);
-  }, []);
+  }, [isClient]);
 
   // Fetch songs
   const handleFetchSongs = useCallback(

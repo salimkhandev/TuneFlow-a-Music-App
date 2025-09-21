@@ -5,6 +5,7 @@ const InstallPWAButton = () => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isInstalled, setIsInstalled] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    const [isIOS, setIsIOS] = useState(false);
 
     useEffect(() => {
         // Ensure we're on the client side
@@ -17,7 +18,16 @@ const InstallPWAButton = () => {
             }
         };
 
+        // Check if iOS
+        const checkIOS = () => {
+            if (typeof window !== 'undefined') {
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                setIsIOS(/iphone|ipad|ipod/.test(userAgent) && !window.MSStream);
+            }
+        };
+
         checkInstalled();
+        checkIOS();
 
         // Listen for beforeinstallprompt (Android & desktop)
         const handleBeforeInstallPrompt = (e) => {
@@ -41,13 +51,6 @@ const InstallPWAButton = () => {
             };
         }
     }, []);
-
-    // iOS install instructions (for Safari)
-    const isiOS = () => {
-        if (typeof window === 'undefined') return false;
-        const userAgent = window.navigator.userAgent.toLowerCase();
-        return /iphone|ipad|ipod/.test(userAgent) && !window.MSStream;
-    };
 
     const handleInstall = () => {
         if (deferredPrompt) {
@@ -73,7 +76,7 @@ const InstallPWAButton = () => {
                 >
                     Install App
                 </button>
-            ) : isiOS() ? (
+            ) : isIOS ? (
                 <div className="p-3 bg-gray-100 rounded-md shadow-md max-w-xs text-sm text-gray-800">
                     To install this app on iOS: Tap <span className="font-bold">Share</span> → <span className="font-bold">Add to Home Screen</span>
                 </div>

@@ -8,8 +8,8 @@ import {
   setVolume,
   togglePlayPause,
 } from "@/lib/slices/playerSlice";
+import { getOfflineAudio, isAudioOffline } from "@/lib/utils";
 import {
-  Heart,
   Pause,
   Play,
   SkipBack,
@@ -42,6 +42,11 @@ const Player = () => {
     setIsHydrated(true);
     setLocalProgress(progress);
   }, [progress]);
+
+  // Reset local progress when current song changes
+  useEffect(() => {
+    setLocalProgress(0);
+  }, [currentSong]);
 
   // Track user interaction for autoplay policy
   useEffect(() => {
@@ -97,8 +102,21 @@ const Player = () => {
   }, [isClient, session?.user?.email]);
   
   // Build current audio URL and download via API proxy to force attachment
-  const getCurrentAudioUrl = () => {
+  const getCurrentAudioUrl = async () => {
     if (!currentSong?.downloadUrl) return "";
+    
+    // Check if song is available offline
+    const isOffline = await isAudioOffline(currentSong.id);
+    
+    if (isOffline) {
+      console.log('💾 Playing from IndexedDB (offline storage):', currentSong.name);
+      const offlineAudio = await getOfflineAudio(currentSong.id);
+      if (offlineAudio?.audioUrl) {
+        return offlineAudio.audioUrl;
+      }
+    }
+    
+    console.log('🌐 Playing from network:', currentSong.name);
     return (
       currentSong.downloadUrl.find((u) => u.quality === "320kbps")?.url ||
       currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url ||
@@ -106,8 +124,8 @@ const Player = () => {
     );
   };
 
-  const handleDownload = () => {
-    const src = getCurrentAudioUrl();
+  const handleDownload = async () => {
+    const src = await getCurrentAudioUrl();
     if (!src) return;
     const params = new URLSearchParams({ url: src, name: currentSong?.name || "song" });
     const a = document.createElement("a");
@@ -147,30 +165,32 @@ const Player = () => {
   useEffect(() => {
     if (!audioRef.current || isLoadingRef.current) return;
 
-    if (currentSong && currentSong.downloadUrl) {
-      const audioUrl =
-        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
-        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
+    const loadAudio = async () => {
+      if (currentSong && currentSong.downloadUrl) {
+        const audioUrl = await getCurrentAudioUrl();
 
-      if (audioUrl && audioRef.current.src !== audioUrl) {
-        isLoadingRef.current = true;
-        
-        // Pause and reset before loading new source
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-        
-        // Reset loading flag when load is complete
-        audioRef.current.onloadeddata = () => {
-          isLoadingRef.current = false;
-        };
-        
-        // Don't auto-play - only play when user explicitly clicks play
-        // Audio will be ready to play when user clicks the play button
+        if (audioUrl && audioRef.current.src !== audioUrl) {
+          isLoadingRef.current = true;
+          
+          // Pause and reset before loading new source
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          
+          audioRef.current.src = audioUrl;
+          audioRef.current.load();
+          
+          // Reset loading flag when load is complete
+          audioRef.current.onloadeddata = () => {
+            isLoadingRef.current = false;
+          };
+          
+          // Don't auto-play - only play when user explicitly clicks play
+          // Audio will be ready to play when user clicks the play button
+        }
       }
-    }
+    };
+
+    loadAudio();
   }, [currentSong, isPlaying]);
 
   // Handle play/pause - only when user explicitly clicks play button
@@ -281,52 +301,7 @@ const Player = () => {
     }
   };
 
-  // Save state in sessionStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "playerState",
-        JSON.stringify({
-          currentSong,
-          isPlaying,
-          volume,
-          progress,
-          queue,
-          queueIndex,
-        })
-      );
-    }
-  }, [currentSong, isPlaying, volume, progress, queue, queueIndex]);
 
-  // Load the stored progress when the song starts playing
-  useEffect(() => {
-    if (!audioRef.current || !isHydrated || isLoadingRef.current) return;
-
-    if (currentSong && currentSong.downloadUrl) {
-      const audioUrl =
-        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
-        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
-
-      if (audioUrl && audioRef.current.src !== audioUrl) {
-        isLoadingRef.current = true;
-        
-        audioRef.current.pause();
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-
-        // Restore progress time after loading
-        audioRef.current.onloadedmetadata = () => {
-          if (!isNaN(audioRef.current.duration)) {
-            audioRef.current.currentTime =
-              (progress / 100) * audioRef.current.duration;
-          }
-          isLoadingRef.current = false;
-        };
-
-        // Don't auto-play - audio will be ready when user clicks play
-      }
-    }
-  }, [currentSong, isHydrated, progress, isPlaying]);
 
   // Check if next/prev buttons should be disabled
   const isQueueEmpty = !queue || queue.length === 0;

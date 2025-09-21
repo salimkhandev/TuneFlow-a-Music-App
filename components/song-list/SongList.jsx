@@ -133,7 +133,7 @@ export function SongList({ songs = [], grid = false, likedSongs = [], onToggleLi
     >
       {songs.map((song, i) => (
         <SongItem
-          key={song.id || i}
+          key={`${song.id || 'unknown'}-${i}`}
           song={song}
           index={i}
           currentSong={currentSong}

@@ -19,7 +19,14 @@ const Page = () => {
     setIsLoadingSongs(true);
     const newSongs = await fetchSongs({ query, limit });
     const results = newSongs?.data?.results;
-    setSongs((prevSongs) => [...prevSongs, ...results]); // Append new songs
+    
+    // Filter out duplicate songs based on ID
+    setSongs((prevSongs) => {
+      const existingIds = new Set(prevSongs.map(song => song.id));
+      const uniqueNewSongs = results.filter(song => !existingIds.has(song.id));
+      return [...prevSongs, ...uniqueNewSongs];
+    });
+    
     setIsLoadingSongs(false);
   };
 

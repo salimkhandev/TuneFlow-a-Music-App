@@ -1,30 +1,39 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function NavigationLoader() {
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
+  const isNavigatingRef = useRef(false);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
-    let navigationTimeout;
-    
     const handleStart = () => {
-      setIsNavigating(true);
+      if (isNavigatingRef.current) return; // Already navigating
+      
+      isNavigatingRef.current = true;
+      
+      // Use requestAnimationFrame to defer the state update to the next frame
+      requestAnimationFrame(() => {
+        setIsNavigating(true);
+      });
+      
       // Clear any existing timeout
-      if (navigationTimeout) {
-        clearTimeout(navigationTimeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
     
     const handleComplete = () => {
-      // Only show loading indicator if navigation takes longer than 50ms
-      navigationTimeout = setTimeout(() => {
+      // Only hide loading indicator if navigation takes longer than 50ms
+      timeoutRef.current = setTimeout(() => {
+        isNavigatingRef.current = false;
         setIsNavigating(false);
       }, 50);
     };
 
-    // Listen for route changes
+    // Listen for route changes using a more compatible approach
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
@@ -47,8 +56,8 @@ export function NavigationLoader() {
     
     // Cleanup
     return () => {
-      if (navigationTimeout) {
-        clearTimeout(navigationTimeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
@@ -58,6 +67,7 @@ export function NavigationLoader() {
 
   // Hide loading indicator when pathname changes (route completed)
   useEffect(() => {
+    isNavigatingRef.current = false;
     setIsNavigating(false);
   }, [pathname]);
 

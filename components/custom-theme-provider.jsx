@@ -21,9 +21,11 @@ export function CustomThemeProvider({ children, defaultTheme = "default" }) {
     setMounted(true);
     
     // Apply theme immediately to prevent flash
-    const storedTheme = localStorage.getItem("app-theme");
-    if (storedTheme && themeConfig.themes.some((t) => t.name === storedTheme)) {
-      setTheme(storedTheme);
+    if (typeof window !== 'undefined') {
+      const storedTheme = localStorage.getItem("app-theme");
+      if (storedTheme && themeConfig.themes.some((t) => t.name === storedTheme)) {
+        setTheme(storedTheme);
+      }
     }
   }, []);
 
@@ -32,7 +34,9 @@ export function CustomThemeProvider({ children, defaultTheme = "default" }) {
 
     // Apply theme immediately to prevent flash
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("app-theme", theme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("app-theme", theme);
+    }
 
     // Apply theme CSS variables
     const selectedTheme = themeConfig.themes.find((t) => t.name === theme);
