@@ -126,6 +126,16 @@ const FullScreenPlayer = ({ onClose }) => {
     return document.querySelector('audio');
   };
 
+  // Ensure shared audio element allows CORS for proxied stream
+  useEffect(() => {
+    const el = getAudioElement();
+    if (el) {
+      el.crossOrigin = 'anonymous';
+      // keep preload aggressive to reduce start latency
+      el.preload = 'auto';
+    }
+  }, []);
+
   // Auto-play when full-screen opens
   useEffect(() => {
     if (isHydrated && currentSong && hasUserInteracted) {

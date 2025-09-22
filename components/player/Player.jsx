@@ -29,6 +29,7 @@ const Player = () => {
   const audioRef = useRef(null);
   const animationRef = useRef(null);
   const isLoadingRef = useRef(false);
+  const pendingPlayRef = useRef(false);
   const [localProgress, setLocalProgress] = useState(0);
   const [likedSongs, setLikedSongs] = useState([]);
   const [isClient, setIsClient] = useState(false);
@@ -107,6 +108,7 @@ const Player = () => {
     
     // Check if song is available offline
     const isOffline = await isAudioOffline(currentSong.id);
+    // const isOffline = false;
     
     if (isOffline) {
       console.log('💾 Playing from IndexedDB (offline storage):', currentSong.name);
@@ -117,24 +119,16 @@ const Player = () => {
     }
     
     console.log('🌐 Playing from network:', currentSong.name);
-    return (
+    const directUrl = (
       currentSong.downloadUrl.find((u) => u.quality === "320kbps")?.url ||
       currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url ||
       ""
     );
+    // Return direct URL (no proxy)
+    return directUrl;
   };
 
-  const handleDownload = async () => {
-    const src = await getCurrentAudioUrl();
-    if (!src) return;
-    const params = new URLSearchParams({ url: src, name: currentSong?.name || "song" });
-    const a = document.createElement("a");
-    a.href = `/api/download?${params.toString()}`;
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  };
+
 
   // Check if current song is liked
   const isSongLiked = useCallback((songId) => {
@@ -161,7 +155,7 @@ const Player = () => {
     }
   }, [isClient, currentSong, session, likedSongs]);
 
-  // Initialize audio element
+  // Initialize/load audio element
   useEffect(() => {
     if (!audioRef.current || isLoadingRef.current) return;
 
@@ -179,10 +173,14 @@ const Player = () => {
           audioRef.current.src = audioUrl;
           audioRef.current.load();
           
-          // Reset loading flag when load is complete
-          audioRef.current.onloadeddata = () => {
-            isLoadingRef.current = false;
-          };
+        // Reset loading flag when load is complete and auto-play if pending
+        audioRef.current.onloadeddata = () => {
+          isLoadingRef.current = false;
+          if (pendingPlayRef.current && isPlaying && hasUserInteracted) {
+            pendingPlayRef.current = false;
+            audioRef.current.play().catch(() => {});
+          }
+        };
           
           // Don't auto-play - only play when user explicitly clicks play
           // Audio will be ready to play when user clicks the play button
@@ -198,6 +196,10 @@ const Player = () => {
     if (!audioRef.current || !isHydrated) return;
 
     if (isPlaying && hasUserInteracted) {
+      if (isLoadingRef.current) {
+        pendingPlayRef.current = true;
+        return;
+      }
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
@@ -350,6 +352,10 @@ const Player = () => {
       </div>
     );
   }
+  const url =
+    currentSong?.downloadUrl?.find(u => u.quality === "320kbps")?.url ||
+    currentSong?.downloadUrl?.[currentSong.downloadUrl.length - 1]?.url ||
+    "";
 
   return (
     <div 
@@ -357,9 +363,19 @@ const Player = () => {
       onClick={() => currentSong && setShowFullScreen(true)}
     >
       {/* Audio Element */}
-      <audio ref={audioRef} onEnded={handleSongEnd} />
-      
-
+      <audio ref={audioRef} onEnded={handleSongEnd} preload="auto" crossOrigin="anonymous" />
+      {/* make that url clickible */}
+      {audioRef.current?.src && (
+        <a
+          href={audioRef.current.src}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-xs text-muted-foreground break-all"
+        >
+          {audioRef.current.src}
+        </a>
+      )}
       {/* Progress Bar */}
       <div onClick={(e) => e.stopPropagation()}>
         <Slider
