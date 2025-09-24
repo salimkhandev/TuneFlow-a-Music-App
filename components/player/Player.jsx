@@ -21,6 +21,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import FullScreenPlayer from "./FullScreenPlayer";
 
+
+
+
 const Player = () => {
   const dispatch = useDispatch();
   const { data: session } = useSession();
@@ -34,8 +37,8 @@ const Player = () => {
   const [likedSongs, setLikedSongs] = useState([]);
   const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [showFullScreen, setShowFullScreen] = useState(false);
+  // const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [showFullScreen, setShowFullScreen] = useState(true);
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -50,39 +53,16 @@ const Player = () => {
   }, [currentSong]);
 
   // Track user interaction for autoplay policy
-  useEffect(() => {
-    const handleUserInteraction = () => {
-      setHasUserInteracted(true);
-    };
-
-    // Add event listeners for user interaction
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('touchstart', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
-    window.addEventListener('userInteraction', handleUserInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('userInteraction', handleUserInteraction);
-    };
-  }, []);
+ 
 
   // Show full-screen player when a song is selected and start playing
-  useEffect(() => {
-    if (currentSong && hasUserInteracted) {
-      setShowFullScreen(true);
-      // Start playing the song immediately when full-screen opens
-      dispatch(togglePlayPause());
-    }
-  }, [currentSong, hasUserInteracted, dispatch]);
 
-  // Handle play button click
+
   const handlePlayClick = () => {
-    setHasUserInteracted(true);
+    console.log('toggle from', isPlaying);
     dispatch(togglePlayPause());
   };
+  useEffect(() => { console.log('isPlaying ->', isPlaying); }, [isPlaying]);
 
   // Load liked songs from DB
   useEffect(() => {
@@ -174,16 +154,14 @@ const Player = () => {
           audioRef.current.load();
           
         // Reset loading flag when load is complete and auto-play if pending
-        audioRef.current.onloadeddata = () => {
-          isLoadingRef.current = false;
-          if (pendingPlayRef.current && isPlaying && hasUserInteracted) {
+          audioRef.current.onloadeddata = () => {
+            isLoadingRef.current = false;
+          if (pendingPlayRef.current && isPlaying) {
             pendingPlayRef.current = false;
             audioRef.current.play().catch(() => {});
           }
-        };
-          
-          // Don't auto-play - only play when user explicitly clicks play
-          // Audio will be ready to play when user clicks the play button
+          };
+
         }
       }
     };
@@ -193,30 +171,33 @@ const Player = () => {
 
   // Handle play/pause - only when user explicitly clicks play button
   useEffect(() => {
-    if (!audioRef.current || !isHydrated) return;
+    if (!audioRef.current) return;
 
-    if (isPlaying && hasUserInteracted) {
-      if (isLoadingRef.current) {
-        pendingPlayRef.current = true;
-        return;
+    if (currentSong && currentSong.downloadUrl) {
+      const audioUrl =
+        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
+        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
+
+      if (audioUrl) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.load();
+
+        // Restore progress time after loading
+        audioRef.current.onloadedmetadata = () => {
+          if (!isNaN(audioRef.current.duration)) {
+            audioRef.current.currentTime =
+              (progress / 100) * audioRef.current.duration;
+          }
+        };
+
+        if (isPlaying) {
+          audioRef.current
+            .play()
+            .catch((err) => console.error("Playback failed:", err));
+        }
       }
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log("Audio started playing");
-          })
-          .catch((err) => {
-            // Only log non-abort errors
-            if (err.name !== 'AbortError') {
-              console.error("Playback failed:", err);
-            }
-          });
-      }
-    } else if (!isPlaying) {
-      audioRef.current.pause();
     }
-  }, [isPlaying, isHydrated, hasUserInteracted]);
+  }, [currentSong]);
 
   // Handle volume changes
   useEffect(() => {
@@ -224,6 +205,23 @@ const Player = () => {
       audioRef.current.volume = volume / 100;
     }
   }, [volume]);
+
+  // Mirror global isPlaying to the single audio element (no reloads here)
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      const p = audioRef.current.play();
+      if (p) {
+        p.catch((err) => {
+          if (err?.name !== 'AbortError') {
+            console.error('Playback failed:', err);
+          }
+        });
+      }
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
 
   // Function to update progress smoothly
   const updateProgress = () => {
@@ -284,14 +282,14 @@ const Player = () => {
 
   // Handle next song button click
   const handleNextSong = () => {
-    setHasUserInteracted(true);
+    // setHasUserInteracted(true);
     dispatch(setProgress(0));
     dispatch(nextSong());
   };
 
   // Handle previous song button click
   const handlePreviousSong = () => {
-    setHasUserInteracted(true);
+    // setHasUserInteracted(true);
     // If we're more than 3 seconds into the song, go back to the start of the current song
     if (audioRef.current && audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
@@ -308,7 +306,7 @@ const Player = () => {
   // Check if next/prev buttons should be disabled
   const isQueueEmpty = !queue || queue.length === 0;
 
-  // Show full-screen player if active
+  // // Show full-screen player if active
   if (showFullScreen && currentSong) {
     return (
       <>
