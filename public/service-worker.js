@@ -102,7 +102,20 @@ self.addEventListener('fetch', (event) => {
 
 // Optional: Add a message event handler for cache updates
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  const msg = event.data || {};
+  if (msg.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (msg.type === 'CLEAR_CACHES') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) =>
+        Promise.all(cacheNames.map((name) => caches.delete(name)))
+      ).then(() => {
+        // Notify clients that caches are cleared
+        return self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+          clients.forEach((client) => client.postMessage({ type: 'CACHES_CLEARED' }));
+        });
+      })
+    );
   }
 });
