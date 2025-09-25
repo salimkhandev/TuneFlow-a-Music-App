@@ -10,6 +10,7 @@ import AppSessionProvider from "@/components/session-provider/SessionProvider";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import StoreProvider from "@/components/store-provider/StoreProvider";
 import { ThemeProvider } from "@/components/theme-provider";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -94,6 +95,7 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <CustomThemeProvider defaultTheme="default">
+
               <NavigationLoader />
               <RoutePrefetcher />
               <NetworkDetector />
@@ -126,6 +128,7 @@ export default function RootLayout({ children }) {
                 <Player />
               </div>
               <PWAInstallButton />
+
             </CustomThemeProvider>
           </ThemeProvider>
           </AppSessionProvider>

@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { clearQueue, playSong, setProgress, togglePlayPause } from "@/lib/slices/playerSlice";
+import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
 import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -11,6 +11,7 @@ import SongMenu from "../song-menu/SongMenu";
 
 const LikedSongs = () => {
   const dispatch = useDispatch();
+
   const { currentSong, isPlaying, queue } = useSelector((state) => state.player);
   const [likedSongs, setLikedSongs] = useState([]);
   const { data: session } = useSession();
@@ -82,6 +83,8 @@ const LikedSongs = () => {
         dispatch(clearQueue());
         dispatch(playSong({ queue: likedSongs, index }));
       } else {
+        // Ensure bottom player is visible when switching within the same queue
+        dispatch(showBottomPlayer());
         // If we're in the same queue, just jump to the song
         const songIndex = queue.findIndex((s) => s.id === song.id);
         if (songIndex !== -1) {

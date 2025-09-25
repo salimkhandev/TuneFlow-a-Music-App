@@ -2,12 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
+  hideBottomPlayer,
   nextSong,
   previousSong,
   setProgress,
   setVolume,
   togglePlayPause,
-  hideBottomPlayer,
 } from "@/lib/slices/playerSlice";
 import { getOfflineAudio, isAudioOffline } from "@/lib/utils";
 import {
@@ -29,7 +29,7 @@ import FullScreenPlayer from "./FullScreenPlayer";
 const Player = () => {
   const dispatch = useDispatch();
   const { data: session } = useSession();
-  const { currentSong, isPlaying, volume, progress, queue, queueIndex, isBottomPlayerVisible } =
+  const { currentSong, isPlaying, volume, progress, queue, queueIndex, isBottomPlayerVisible} =
     useSelector((state) => state.player);
   const audioRef = useRef(null);
   const animationRef = useRef(null);
@@ -313,9 +313,9 @@ const Player = () => {
   if (showFullScreen && currentSong) {
     return (
       <>
-        {/* Keep the bottom player's audio element active but hidden */}
+        {/* Keep a persistent, hidden audio element mounted at all times */}
         <div className="hidden">
-          <audio ref={audioRef} onEnded={handleSongEnd} />
+          <audio ref={audioRef} onEnded={handleSongEnd} preload="auto" crossOrigin="anonymous" />
         </div>
         <FullScreenPlayer
           onClose={() => {
@@ -359,29 +359,16 @@ const Player = () => {
     "";
 
   return (
-    isBottomPlayerVisible && (
-
-      <div
-        className="relative w-full bg-background p-3 border-t flex flex-col cursor-pointer hover:bg-muted/50 transition-colors"
-        onClick={() => currentSong && setShowFullScreen(true)}
-      >
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 h-8 w-8"
-          onClick={(e) => {
-            // e.stopPropagation();
-            dispatch(hideBottomPlayer());
-          }}
-          aria-label="Close player"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        {/* Audio Element */}
+    <>
+      {/* Persistent, hidden audio element to keep playback/progress alive even when UI is hidden */}
+      <div className="hidden">
         <audio ref={audioRef} onEnded={handleSongEnd} preload="auto" crossOrigin="anonymous" />
-        {/* make that url clickible */}
-        {audioRef.current?.src && (
+      </div>
+    
+      {isBottomPlayerVisible && (
+       <div className="relative w-full bg-background p-3 border-t flex flex-col cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => currentSong && setShowFullScreen(true)} >
+          {/* Audio Element URL (debug/link) */}
+          {/* {audioRef.current?.src && (
           <a
             href={audioRef.current.src}
             target="_blank"
@@ -391,7 +378,7 @@ const Player = () => {
           >
             {audioRef.current.src}
           </a>
-        )}
+          )} */}
         {/* Progress Bar */}
         <div onClick={(e) => e.stopPropagation()}>
           <Slider
@@ -399,7 +386,7 @@ const Player = () => {
             value={[localProgress]}
             onValueChange={handleProgressChange}
             max={100}
-            step={0.1} // Make it more precise
+              step={0.1}
           />
         </div>
         <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-1">
@@ -485,11 +472,22 @@ const Player = () => {
               max={100}
               step={1}
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8"
+                onClick={() => dispatch(hideBottomPlayer())}
+              aria-label="Close player"
+            >
+              <X className="h-8 w-8" />
+            </Button>
           </div>
         </div>
       </div>
+        )}
+        </>
     )
-  );
+
 };
 
 export default Player;

@@ -10,7 +10,8 @@ import { decodeHtmlEntities } from "@/lib/utils";
 import { AudioLines, Pause, Play } from "lucide-react";
 import { memo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import SongMenu from "../song-menu/SongMenu";
+import SongMenu from "../song-menu/SongMenu"; 
+
 
 // Memoized SongItem component to prevent unnecessary re-renders
 const SongItem = memo(({ 
@@ -24,6 +25,7 @@ const SongItem = memo(({
   onToggleLike,
   onDownload
 }) => {
+
   return (
     <div
       onClick={() => handlePlayPause(song, index)}
@@ -94,6 +96,7 @@ export function SongList({ songs = [], grid = false, likedSongs = [], onToggleLi
   }, []);
 
   const handlePlayPause = useCallback((song, index) => {
+
     if (currentSong?.id === song.id) {
       dispatch(togglePlayPause()); // Toggle if the song is already playing
     } else {
