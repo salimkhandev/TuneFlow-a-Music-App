@@ -7,6 +7,7 @@ import {
   setProgress,
   setVolume,
   togglePlayPause,
+  hideBottomPlayer,
 } from "@/lib/slices/playerSlice";
 import { getOfflineAudio, isAudioOffline } from "@/lib/utils";
 import {
@@ -14,7 +15,8 @@ import {
   Play,
   SkipBack,
   SkipForward,
-  Volume2
+  Volume2,
+  X
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,7 +29,7 @@ import FullScreenPlayer from "./FullScreenPlayer";
 const Player = () => {
   const dispatch = useDispatch();
   const { data: session } = useSession();
-  const { currentSong, isPlaying, volume, progress, queue, queueIndex } =
+  const { currentSong, isPlaying, volume, progress, queue, queueIndex, isBottomPlayerVisible } =
     useSelector((state) => state.player);
   const audioRef = useRef(null);
   const animationRef = useRef(null);
@@ -37,6 +39,7 @@ const Player = () => {
   const [likedSongs, setLikedSongs] = useState([]);
   const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  // Visibility now comes from Redux: state.player.isBottomPlayerVisible
   // const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showFullScreen, setShowFullScreen] = useState(true);
 
@@ -53,7 +56,7 @@ const Player = () => {
   }, [currentSong]);
 
   // Track user interaction for autoplay policy
- 
+
 
   // Show full-screen player when a song is selected and start playing
 
@@ -81,15 +84,15 @@ const Player = () => {
       .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
       .catch(() => setLikedSongs([]));
   }, [isClient, session?.user?.email]);
-  
+
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = async () => {
     if (!currentSong?.downloadUrl) return "";
-    
+
     // Check if song is available offline
     const isOffline = await isAudioOffline(currentSong.id);
     // const isOffline = false;
-    
+
     if (isOffline) {
       console.log('💾 Playing from IndexedDB (offline storage):', currentSong.name);
       const offlineAudio = await getOfflineAudio(currentSong.id);
@@ -97,7 +100,7 @@ const Player = () => {
         return offlineAudio.audioUrl;
       }
     }
-    
+
     console.log('🌐 Playing from network:', currentSong.name);
     const directUrl = (
       currentSong.downloadUrl.find((u) => u.quality === "320kbps")?.url ||
@@ -126,12 +129,12 @@ const Player = () => {
     if (isAlready) {
       fetch(`/api/liked-songs?songId=${encodeURIComponent(currentSong.id)}`, { method: 'DELETE' })
         .then(() => setLikedSongs(prev => prev.filter(s => s.id !== currentSong.id)))
-        .catch(() => {});
+        .catch(() => { });
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
       fetch('/api/liked-songs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ song: songWithTimestamp }) })
         .then(() => setLikedSongs(prev => [...prev, songWithTimestamp]))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [isClient, currentSong, session, likedSongs]);
 
@@ -145,21 +148,21 @@ const Player = () => {
 
         if (audioUrl && audioRef.current.src !== audioUrl) {
           isLoadingRef.current = true;
-          
+
           // Pause and reset before loading new source
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
-          
+
           audioRef.current.src = audioUrl;
           audioRef.current.load();
-          
-        // Reset loading flag when load is complete and auto-play if pending
+
+          // Reset loading flag when load is complete and auto-play if pending
           audioRef.current.onloadeddata = () => {
             isLoadingRef.current = false;
-          if (pendingPlayRef.current && isPlaying) {
-            pendingPlayRef.current = false;
-            audioRef.current.play().catch(() => {});
-          }
+            if (pendingPlayRef.current && isPlaying) {
+              pendingPlayRef.current = false;
+              audioRef.current.play().catch(() => { });
+            }
           };
 
         }
@@ -314,7 +317,7 @@ const Player = () => {
         <div className="hidden">
           <audio ref={audioRef} onEnded={handleSongEnd} />
         </div>
-        <FullScreenPlayer 
+        <FullScreenPlayer
           onClose={() => {
             setShowFullScreen(false);
             // Ensure the song continues playing in the background
@@ -356,120 +359,139 @@ const Player = () => {
     "";
 
   return (
-    <div 
-      className="relative w-full bg-background p-3 border-t flex flex-col cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={() => currentSong && setShowFullScreen(true)}
-    >
-      {/* Audio Element */}
-      <audio ref={audioRef} onEnded={handleSongEnd} preload="auto" crossOrigin="anonymous" />
-      {/* make that url clickible */}
-      {audioRef.current?.src && (
-        <a
-          href={audioRef.current.src}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="text-xs text-muted-foreground break-all"
-        >
-          {audioRef.current.src}
-        </a>
-      )}
-      {/* Progress Bar */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <Slider
-          className="absolute -top-[1px] left-0 w-full h-[2px] rounded-none"
-          value={[localProgress]}
-          onValueChange={handleProgressChange}
-          max={100}
-          step={0.1} // Make it more precise
-        />
-      </div>
-          <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-1">
-            <span>{Math.floor((localProgress / 100) * (currentSong?.duration || 0) / 60)}:{(Math.floor((localProgress / 100) * (currentSong?.duration || 0)) % 60).toString().padStart(2, '0')}</span>
-            <span>{Math.floor((currentSong?.duration || 0) / 60)}:{(Math.floor(currentSong?.duration || 0) % 60).toString().padStart(2, '0')}</span>
-          </div>
+    isBottomPlayerVisible && (
 
-      {/* Player Content */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: Song Info */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          <img
-            src={
-              currentSong?.image?.[currentSong.image.length - 1]?.url ||
-              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yOCA0MkMzNS43MzM3IDQyIDQyIDM1LjczMzcgNDIgMjhDNDIgMjAuMjY2MyAzNS43MzM3IDE0IDI4IDE0QzIwLjI2NjMgMTQgMTQgMjAuMjY2MyAxNCAyOEMxNCAzNS43MzM3IDIwLjI2NjMgNDIgMjggNDJaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yNCAyMkwyNCAzNEwyOCAzMEwzMiAzNEwzMiAyMkwyNCAyMloiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"
+      <div
+        className="relative w-full bg-background p-3 border-t flex flex-col cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => currentSong && setShowFullScreen(true)}
+      >
+        {/* Close Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isPlaying) {
+              dispatch(togglePlayPause());
             }
-            alt="Album cover"
-            className="h-14 w-14 rounded-md"
-          />
-          <div className="truncate">
-            <h3 className="font-semibold text-foreground truncate">
-              {currentSong?.name || "No Song Playing"}
-            </h3>
-            <p className="text-xs text-muted-foreground truncate">
-              {currentSong?.artists?.primary
-                ?.map((artist) => artist.name)
-                .join(", ") || "Artist Name"}
-            </p>
-          </div>
-          
-          {/* Like button */}
-
-        </div>
-
-        {/* Center: Playback Controls */}
-        <div className="flex items-center gap-4 flex-1 justify-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePreviousSong();
-            }}
-            disabled={isQueueEmpty}
+            dispatch(hideBottomPlayer());
+          }}
+          aria-label="Close player"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        {/* Audio Element */}
+        <audio ref={audioRef} onEnded={handleSongEnd} preload="auto" crossOrigin="anonymous" />
+        {/* make that url clickible */}
+        {audioRef.current?.src && (
+          <a
+            href={audioRef.current.src}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs text-muted-foreground break-all"
           >
-            <SkipBack className="h-5 w-5" />
-          </Button>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePlayClick();
-            }}
-            variant="outline"
-            size="icon"
-            disabled={!currentSong}
-          >
-            {isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNextSong();
-            }}
-            disabled={isQueueEmpty}
-          >
-            <SkipForward className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Right: Volume Control */}
-        <div className="hidden sm:flex items-center gap-2 flex-1 justify-end" onClick={(e) => e.stopPropagation()}>
-          <Volume2 className="h-5 w-5 text-muted-foreground" />
+            {audioRef.current.src}
+          </a>
+        )}
+        {/* Progress Bar */}
+        <div onClick={(e) => e.stopPropagation()}>
           <Slider
-            className="w-24"
-            value={[volume]}
-            onValueChange={(value) => dispatch(setVolume(value[0]))}
+            className="absolute -top-[1px] left-0 w-full h-[2px] rounded-none"
+            value={[localProgress]}
+            onValueChange={handleProgressChange}
             max={100}
-            step={1}
+            step={0.1} // Make it more precise
           />
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-1">
+          <span>{Math.floor((localProgress / 100) * (currentSong?.duration || 0) / 60)}:{(Math.floor((localProgress / 100) * (currentSong?.duration || 0)) % 60).toString().padStart(2, '0')}</span>
+          <span>{Math.floor((currentSong?.duration || 0) / 60)}:{(Math.floor(currentSong?.duration || 0) % 60).toString().padStart(2, '0')}</span>
+        </div>
+
+        {/* Player Content */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Song Info */}
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <img
+              src={
+                currentSong?.image?.[currentSong.image.length - 1]?.url ||
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yOCA0MkMzNS43MzM3IDQyIDQyIDM1LjczMzcgNDIgMjhDNDIgMjAuMjY2MyAzNS43MzM3IDE0IDI4IDE0QzIwLjI2NjMgMTQgMTQgMjAuMjY2MyAxNCAyOEMxNCAzNS43MzM3IDIwLjI2NjMgNDIgMjggNDJaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0yNCAyMkwyNCAzNEwyOCAzMEwzMiAzNEwzMiAyMkwyNCAyMloiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"
+              }
+              alt="Album cover"
+              className="h-14 w-14 rounded-md"
+            />
+            <div className="truncate">
+              <h3 className="font-semibold text-foreground truncate">
+                {currentSong?.name || "No Song Playing"}
+              </h3>
+              <p className="text-xs text-muted-foreground truncate">
+                {currentSong?.artists?.primary
+                  ?.map((artist) => artist.name)
+                  .join(", ") || "Artist Name"}
+              </p>
+            </div>
+
+            {/* Like button */}
+
+          </div>
+
+          {/* Center: Playback Controls */}
+          <div className="flex items-center gap-4 flex-1 justify-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePreviousSong();
+              }}
+              disabled={isQueueEmpty}
+            >
+              <SkipBack className="h-5 w-5" />
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayClick();
+              }}
+              variant="outline"
+              size="icon"
+              disabled={!currentSong}
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextSong();
+              }}
+              disabled={isQueueEmpty}
+            >
+              <SkipForward className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Right: Volume Control */}
+          <div className="hidden sm:flex items-center gap-2 flex-1 justify-end" onClick={(e) => e.stopPropagation()}>
+            <Volume2 className="h-5 w-5 text-muted-foreground" />
+            <Slider
+              className="w-24"
+              value={[volume]}
+              onValueChange={(value) => dispatch(setVolume(value[0]))}
+              max={100}
+              step={1}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    )
   );
 };
 
