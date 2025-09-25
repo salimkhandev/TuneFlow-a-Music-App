@@ -371,10 +371,7 @@ const Player = () => {
           size="icon"
           className="absolute top-2 right-2 h-8 w-8"
           onClick={(e) => {
-            e.stopPropagation();
-            if (isPlaying) {
-              dispatch(togglePlayPause());
-            }
+            // e.stopPropagation();
             dispatch(hideBottomPlayer());
           }}
           aria-label="Close player"
