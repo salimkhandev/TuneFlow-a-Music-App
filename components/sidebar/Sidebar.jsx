@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const routes = [
   {
@@ -51,6 +52,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  
+  // Get network status from Redux store
+  const isOnline = useSelector((state) => state.network.netAvail);
 
   // Ensure we're on the client side
   useEffect(() => {
@@ -75,10 +79,13 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, [isClient]);
 
+  // Use only liked songs route when offline, all routes when online
+  const filteredRoutes = isOnline ? routes : [routes[1]]; // routes[1] is the liked songs route
+
   return (
     <div className="flex flex-col h-full bg-card w-full overflow-auto scrollbar-hidden">
       <div className="flex flex-row sm:flex-col gap-2 sm:p-4">
-        {routes.map((route) => (
+        {filteredRoutes.map((route) => (
           <Link key={route.href} href={route.href} prefetch={true}>
             <Button
               variant="ghost"
