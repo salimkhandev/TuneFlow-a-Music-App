@@ -5,7 +5,7 @@ import { useCallback, useEffect } from "react";
 export function useRoutePrefetch() {
   const router = useRouter();
 
-  const prefetchRoute = useCallback((href) => {
+  const prefetchRoute = useCallback((href) => { 
     // Prefetch the route in the background
     router.prefetch(href);
   }, [router]);

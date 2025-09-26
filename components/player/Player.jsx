@@ -65,7 +65,7 @@ const Player = () => {
     console.log('toggle from', isPlaying);
     dispatch(togglePlayPause());
   };
-  useEffect(() => { console.log('isPlaying ->', isPlaying); }, [isPlaying]);
+  // useEffect(() => { console.log('isPlaying ->', isPlaying); }, [isPlaying]);
 
   // Load liked songs from DB
   useEffect(() => {

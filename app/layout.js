@@ -53,7 +53,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
         <link rel="icon" href="/icons/favicon.ico" />
         
-        <script
+        {/* <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -81,7 +81,7 @@ export default function RootLayout({ children }) {
               })();
             `,
           }}
-        />
+        /> */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -105,7 +105,7 @@ export default function RootLayout({ children }) {
                   direction="horizontal"
                   className="flex-1 border-y"
                 >
-                  <ResizablePanel
+                  <ResizablePanel 
                     defaultSize={20}
                     minSize={0}
                     maxSize={20}

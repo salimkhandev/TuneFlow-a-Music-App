@@ -1,12 +1,11 @@
 // self.__WB_MANIFEST
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 
 const FILES_TO_CACHE = [
   '/',
   '/manifest',
-  '/favicon.ico',
 ];
 
 // Install event: Cache assets
