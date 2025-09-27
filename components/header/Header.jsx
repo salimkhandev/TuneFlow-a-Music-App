@@ -214,30 +214,28 @@ const Header = () => {
   };
 
   return (
-    <header className="flex flex-col md:flex-row items-center justify-between p-3 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 min-h-[60px]">
+    <header className="flex items-center p-3 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Left Side: Logo */}
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">
-          <Music className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">Musix</h1>
-        </div>
+      <div className="hidden md:flex items-center gap-2">
+        <Music className="h-8 w-8 text-primary" />
+        <h1 className="text-2xl font-bold">Tune Flow</h1>
+      </div>
 
-        {/* Middle: Search Bar (Hidden on Small Screens) */}
-        <div className="hidden sm:flex items-center gap-4 flex-1 max-w-md">
-          <Button
-            variant="secondary"
-            className="relative w-full flex justify-start items-center"
-            onClick={() => setIsOpenSearchDialog(true)}
-          >
-            <Search className="text-muted-foreground" />
-            <p className="text-muted-foreground font-normal">
-              Search songs, artists, or playlists...
-            </p>
-          </Button>
-        </div>
+      {/* Middle: Search Bar (Hidden on Small Screens) */}
+      <div className="hidden sm:flex items-center gap-4 flex-1 max-w-md mx-4">
+        <Button
+          variant="secondary"
+          className="relative w-full flex justify-start items-center"
+          onClick={() => setIsOpenSearchDialog(true)}
+        >
+          <Search className="text-muted-foreground" />
+          <p className="text-muted-foreground font-normal">
+            Search songs, artists, or playlists...
+          </p>
+        </Button>
+      </div>
 
-        {/* Right Side: Mode Toggle & Mobile Search Button */}
-        <div className="flex items-center gap-3">
+      {/* Right Side: Mode Toggle & Mobile Search Button */}
           {/* Mobile Search Icon */}
           <Button
             size="icon"
@@ -247,17 +245,22 @@ const Header = () => {
           >
             <Search className="h-5 w-5 text-muted-foreground" />
           </Button>
+      <div className="flex items-center gap-3 ml-auto">
 
-          {/* Mode Toggle */}
-          <ModeToggle />
+          {/* Mode Toggle - Hidden on Mobile, Visible on Desktop */}
+          <div className="hidden sm:block">
+            <ModeToggle />
+          </div>
 
-          {/* Custom Theme Switcher */}
-          <CustomThemeSwitcher />
+          {/* Custom Theme Switcher - Hidden on Mobile, Visible on Desktop */}
+          <div className="hidden sm:block">
+            <CustomThemeSwitcher />
+          </div>
 
           {session?.user ? (
-            <DropdownMenu>
+          <DropdownMenu >
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full p-0 overflow-hidden touch-manipulation">
+                <Button variant="ghost" className="relative h-8 w-8  rounded-full p-0 overflow-hidden">
                   {session.user.image && !imageError ? (
                 <img
                   src={session.user.image}
@@ -269,7 +272,7 @@ const Header = () => {
                       onLoad={() => setImageError(false)}
                     />
                   ) : (
-                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <User className="h-4 w-4" />
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -282,6 +285,13 @@ const Header = () => {
                     </p>
             </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 sm:hidden">
+                  <ModeToggle />
+                </div>
+                <div className="px-2 py-1.5 sm:hidden">
+                  <CustomThemeSwitcher />
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
@@ -296,7 +306,6 @@ const Header = () => {
             <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>Sign in</Button>
           )}
         </div>
-      </div>
 
       <Dialog
         open={isOpenSearchDialog}

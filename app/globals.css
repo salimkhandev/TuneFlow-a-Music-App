@@ -296,48 +296,7 @@
   * {
     @apply border-border outline-ring/50;
   }
-  
-  html {
-    height: 100%;
-    width: 100%;
-    overflow-x: hidden;
-  }
-  
   body {
     @apply bg-background text-foreground;
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-  }
-  
-  #__next {
-    height: 100%;
-    width: 100%;
-  }
-  
-  /* Prevent zooming on Android */
-  @media screen and (max-width: 768px) {
-    html {
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-    }
-    
-    body {
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-      touch-action: manipulation;
-    }
-    
-    * {
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-    }
   }
 }

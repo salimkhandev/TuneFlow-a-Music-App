@@ -5,27 +5,30 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export function ModeToggle() {
   const { setTheme } = useTheme();
 
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => {
-        setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-      }}
-    >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+    <div>
+      <Button
+        variant="outline"
+        className="flex items-center gap-2 px-3"
+        onClick={() => {
+          setTheme((prevTheme) =>
+            prevTheme === "light" ? "dark" : "light"
+          );
+        }}
+      >
+        {/* Sun icon (visible in light mode) */}
+        <Sun className="h-5 w-5 transition-all dark:hidden" />
+
+        {/* Moon icon (visible in dark mode) */}
+        <Moon className="h-5 w-5 hidden dark:block transition-all" />
+
+        {/* Text always visible */}
+        <span className="text-sm">Toggle theme</span>
+      </Button>
+    </div>
   );
 }
