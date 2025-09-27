@@ -87,17 +87,24 @@ const Player = () => {
 
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = async () => {
-    if (!currentSong?.downloadUrl) return "";
+    if (!currentSong?.downloadUrl) {
+      console.log('❌ No downloadUrl for song:', currentSong?.name);
+      return "";
+    }
 
     // Check if song is available offline
     const isOffline = await isAudioOffline(currentSong.id);
-    // const isOffline = false;
+    console.log('🔍 Offline check for song:', currentSong.name, 'isOffline:', isOffline);
 
     if (isOffline) {
       console.log('💾 Playing from IndexedDB (offline storage):', currentSong.name);
       const offlineAudio = await getOfflineAudio(currentSong.id);
+      console.log('💾 Offline audio result:', offlineAudio);
       if (offlineAudio?.audioUrl) {
+        console.log('✅ Using offline audio URL:', offlineAudio.audioUrl);
         return offlineAudio.audioUrl;
+      } else {
+        console.log('❌ No offline audio URL found');
       }
     }
 
@@ -107,6 +114,7 @@ const Player = () => {
       currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url ||
       ""
     );
+    console.log('🌐 Network URL:', directUrl);
     // Return direct URL (no proxy)
     return directUrl;
   };
@@ -156,6 +164,11 @@ const Player = () => {
           audioRef.current.src = audioUrl;
           audioRef.current.load();
 
+          // Set pending play if the song should be playing
+          if (isPlaying) {
+            pendingPlayRef.current = true;
+          }
+
           // Reset loading flag when load is complete and auto-play if pending
           audioRef.current.onloadeddata = () => {
             isLoadingRef.current = false;
@@ -164,7 +177,6 @@ const Player = () => {
               audioRef.current.play().catch(() => { });
             }
           };
-
         }
       }
     };

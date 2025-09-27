@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
-import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
+import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -13,11 +13,10 @@ const LikedSongs = () => {
   const dispatch = useDispatch();
 
   const { currentSong, isPlaying, queue } = useSelector((state) => state.player);
-  const isOnline = useSelector((state) => state.network.netAvail); // ✅ Get network status
   const [likedSongs, setLikedSongs] = useState([]);
   const { data: session } = useSession();
   const [isClient, setIsClient] = useState(false);
-
+  
   // Offline audio states
   const [offlineAudio, setOfflineAudio] = useState([]);
   const [offlineStorageSize, setOfflineStorageSize] = useState(0);
@@ -30,60 +29,23 @@ const LikedSongs = () => {
     setIsClient(true);
   }, []);
 
-  // Load liked songs from DB or offline storage based on network status
+  // Load liked songs from DB
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || !session?.user) return;
+    fetch('/api/liked-songs')
+      .then(r => r.json())
+      .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
+      .catch(() => setLikedSongs([]));
+  }, [isClient, session]);
 
-    const loadSongs = async () => {
-      if (isOnline && session?.user) {
-        // Online: Load from network database
-        try {
-          const response = await fetch('/api/liked-songs');
-          const data = await response.json();
-          setLikedSongs(Array.isArray(data.items) ? data.items : []);
-          console.log('🌐 Loaded liked songs from network:', data.items?.length || 0);
-        } catch (error) {
-          console.error('Failed to load liked songs from network:', error);
-          setLikedSongs([]);
-        }
-      } else {
-        // Offline: Load only offline songs from IDB metadata store
-        try {
-          const db = await initOfflineAudioDB();
-          if (!db) {
-            setLikedSongs([]);
-            return;
-          }
-          
-          const transaction = db.transaction(['offlineMetadata'], 'readonly');
-          const store = transaction.objectStore('offlineMetadata');
-          
-          const offlineSongs = await new Promise((resolve, reject) => {
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result || []);
-            request.onerror = () => reject(request.error);
-          });
-          
-          // Convert songId to id for consistency and ensure proper structure
-          const formattedSongs = offlineSongs.map(song => ({
-            ...song,
-            id: song.songId,
-            // Ensure downloadUrl exists for offline songs (player needs this)
-            downloadUrl: song.downloadUrl || [{ url: '', quality: 'offline' }]
-          }));
-          
-          setLikedSongs(formattedSongs);
-          console.log('📱 Loaded offline songs with complete metadata:', formattedSongs.length);
-          console.log('📱 Sample offline song:', formattedSongs[0]);
-        } catch (error) {
-          console.error('Failed to load offline songs:', error);
-          setLikedSongs([]);
-        }
-      }
-    };
-
-    loadSongs();
-  }, [isClient, isOnline, session?.user?.email]);
+  // Reload when session changes
+  useEffect(() => {
+    if (!isClient || !session?.user) return;
+    fetch('/api/liked-songs')
+      .then(r => r.json())
+      .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
+      .catch(() => setLikedSongs([]));
+  }, [isClient, session?.user?.email]);
 
   // Load offline audio data
   useEffect(() => {
