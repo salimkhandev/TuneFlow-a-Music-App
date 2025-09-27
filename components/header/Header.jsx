@@ -214,7 +214,7 @@ const Header = () => {
   };
 
   return (
-    <header className="flex flex-col md:flex-row items-center justify-between p-3 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="flex flex-col md:flex-row items-center justify-between p-3 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 min-h-[60px]">
       {/* Left Side: Logo */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ const Header = () => {
           {session?.user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 overflow-hidden">
+                <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full p-0 overflow-hidden touch-manipulation">
                   {session.user.image && !imageError ? (
                 <img
                   src={session.user.image}
@@ -269,7 +269,7 @@ const Header = () => {
                       onLoad={() => setImageError(false)}
                     />
                   ) : (
-                    <User className="h-4 w-4" />
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
                   )}
                 </Button>
               </DropdownMenuTrigger>
