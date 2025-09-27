@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useMediaSession } from "@/hooks/useMediaSession";
 import {
   hideBottomPlayer,
   nextSong,
@@ -42,6 +43,9 @@ const Player = () => {
   // Visibility now comes from Redux: state.player.isBottomPlayerVisible
   // const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showFullScreen, setShowFullScreen] = useState(true);
+
+  // Initialize Media Session API
+  useMediaSession();
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
