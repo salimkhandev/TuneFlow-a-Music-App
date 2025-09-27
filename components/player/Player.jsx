@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useMediaSession } from "@/hooks/useMediaSession";
 import {
   hideBottomPlayer,
   nextSong,
@@ -44,7 +43,7 @@ const Player = () => {
   // const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showFullScreen, setShowFullScreen] = useState(true);
 
-  // Initialize Media Session API
+  // Initialize Media Session API for system media controls
   useMediaSession();
 
   // Ensure we're on the client side before accessing localStorage
@@ -289,16 +288,13 @@ const Player = () => {
 
   // Handle song ending - play next song
   const handleSongEnd = () => {
-    // Only reset progress if the song actually ended naturally (not manually stopped)
-    if (isPlaying) {
-      dispatch(setProgress(0));
-      // If we have more songs in the queue, play the next one
-      if (queue.length > 1) {
-        dispatch(nextSong());
-      } else {
-        // If we don't have more songs, just stop playing
-        dispatch(togglePlayPause());
-      }
+    dispatch(setProgress(0));
+    // If we have more songs in the queue, play the next one
+    if (queue.length > 1) {
+      dispatch(nextSong());
+    } else {
+      // If we don't have more songs, just stop playing
+      dispatch(togglePlayPause());
     }
   };
 

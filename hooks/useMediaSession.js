@@ -87,8 +87,7 @@ export function useMediaSession() {
                 console.log("Media Session: Stop action triggered");
                 if (audioRef.current) {
                     audioRef.current.pause();
-                    // Don't reset currentTime to 0 when manually stopped
-                    // This allows the user to resume from the same position
+                    audioRef.current.currentTime = 0;
                 }
             });
         };
@@ -113,19 +112,6 @@ export function useMediaSession() {
     useEffect(() => {
         if ("mediaSession" in navigator) {
             navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
-            
-            // If paused, update position state to show current position instead of completed
-            if (!isPlaying && audioRef.current) {
-                try {
-                    navigator.mediaSession.setPositionState({
-                        duration: audioRef.current.duration || 0,
-                        playbackRate: audioRef.current.playbackRate || 1,
-                        position: audioRef.current.currentTime || 0
-                    });
-                } catch (error) {
-                    console.log("Media Session position update failed:", error);
-                }
-            }
         }
     }, [isPlaying]);
 
