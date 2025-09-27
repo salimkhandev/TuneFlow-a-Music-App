@@ -1,6 +1,16 @@
 "use client";
 import { useEffect } from "react";
 
+// Add this function to help users clear problematic caches
+const clearCaches = async () => {
+  if ('serviceWorker' in navigator && 'caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    console.log('🧹 All caches cleared');
+    window.location.reload();
+  }
+};
+
 export default function ServiceWorker() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -16,7 +26,6 @@ export default function ServiceWorker() {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: "SKIP_WAITING" });
           }
-
 
           const checkForUpdate = () => reg.update().catch(() => {});
 

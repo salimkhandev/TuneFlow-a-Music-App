@@ -1,6 +1,6 @@
 // self.__WB_MANIFEST
 
-const CACHE_VERSION = 'v27';
+const CACHE_VERSION = 'v28';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 
 const FILES_TO_CACHE = [
@@ -59,9 +59,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip caching for liked-songs API endpoint
-  if (event.request.url.includes('/api/liked-songs')) {
-    return;
+  // 🚨 FIX: Skip caching for authentication and dynamic API endpoints
+  const url = event.request.url;
+  if (
+    url.includes('/api/auth/') ||          // NextAuth endpoints
+    url.includes('/api/liked-songs') ||     // User-specific data
+    url.includes('/_next/static/chunks/') ||// Dynamic chunks
+    url.includes('/login') ||               // Login page
+    url.includes('/api/download')           // Download endpoints
+  ) {
+    return; // Let these requests bypass the cache entirely
   }
 
   event.respondWith(
