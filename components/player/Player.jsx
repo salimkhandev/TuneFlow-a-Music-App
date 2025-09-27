@@ -22,6 +22,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import FullScreenPlayer from "./FullScreenPlayer";
+import { useMediaSession } from "@/hooks/useMediaSession";
 
 
 
