@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useMediaSession } from "@/hooks/useMediaSession";
 import {
   hideBottomPlayer,
   nextSong,
@@ -22,7 +23,6 @@ import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import FullScreenPlayer from "./FullScreenPlayer";
-import { useMediaSession } from "@/hooks/useMediaSession";
 
 
 
@@ -150,7 +150,7 @@ const Player = () => {
     }
   }, [isClient, currentSong, session, likedSongs]);
 
-  // Initialize/load audio element
+  // Initialize/load audio element - ONLY when currentSong changes
   useEffect(() => {
     if (!audioRef.current || isLoadingRef.current) return;
 
@@ -181,42 +181,22 @@ const Player = () => {
               audioRef.current.play().catch(() => { });
             }
           };
+
+          // Restore progress time after loading (for offline songs)
+          audioRef.current.onloadedmetadata = () => {
+            if (!isNaN(audioRef.current.duration) && progress > 0) {
+              audioRef.current.currentTime = (progress / 100) * audioRef.current.duration;
+            }
+          };
         }
       }
     };
 
     loadAudio();
-  }, [currentSong, isPlaying]);
+  }, [currentSong]); // 🚨 FIX: Removed isPlaying from dependencies to prevent restart
 
-  // Handle play/pause - only when user explicitly clicks play button
-  useEffect(() => {
-    if (!audioRef.current) return;
-
-    if (currentSong && currentSong.downloadUrl) {
-      const audioUrl =
-        currentSong.downloadUrl.find((url) => url.quality === "320kbps")?.url ||
-        currentSong.downloadUrl[currentSong.downloadUrl.length - 1]?.url;
-
-      if (audioUrl) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-
-        // Restore progress time after loading
-        audioRef.current.onloadedmetadata = () => {
-          if (!isNaN(audioRef.current.duration)) {
-            audioRef.current.currentTime =
-              (progress / 100) * audioRef.current.duration;
-          }
-        };
-
-        if (isPlaying) {
-          audioRef.current
-            .play()
-            .catch((err) => console.error("Playback failed:", err));
-        }
-      }
-    }
-  }, [currentSong]);
+  // 🚨 REMOVED: Duplicate audio loading logic that was causing conflicts
+  // The audio loading is now handled only in the effect above
 
   // Handle volume changes
   useEffect(() => {
