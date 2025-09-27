@@ -289,13 +289,16 @@ const Player = () => {
 
   // Handle song ending - play next song
   const handleSongEnd = () => {
-    dispatch(setProgress(0));
-    // If we have more songs in the queue, play the next one
-    if (queue.length > 1) {
-      dispatch(nextSong());
-    } else {
-      // If we don't have more songs, just stop playing
-      dispatch(togglePlayPause());
+    // Only reset progress if the song actually ended naturally (not manually stopped)
+    if (isPlaying) {
+      dispatch(setProgress(0));
+      // If we have more songs in the queue, play the next one
+      if (queue.length > 1) {
+        dispatch(nextSong());
+      } else {
+        // If we don't have more songs, just stop playing
+        dispatch(togglePlayPause());
+      }
     }
   };
 
