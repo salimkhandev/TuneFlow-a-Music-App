@@ -13,7 +13,7 @@ const LikedSongs = () => {
   const dispatch = useDispatch();
 
   const { currentSong, isPlaying, queue } = useSelector((state) => state.player);
-  const isOnline = useSelector((state) => state.network.netAvail); // ✅ Get network status
+  const { netAvail: isOnline, isInitialized } = useSelector((state) => state.network); // ✅ Get network status and initialization
   const [likedSongs, setLikedSongs] = useState([]);
   const { data: session } = useSession();
   const [isClient, setIsClient] = useState(false);
@@ -32,7 +32,7 @@ const LikedSongs = () => {
 
   // Load liked songs from DB or offline storage based on network status
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || !isInitialized) return; // ✅ Wait for network detection to initialize
 
     const loadSongs = async () => {
       if (isOnline && session?.user) {
@@ -83,7 +83,7 @@ const LikedSongs = () => {
     };
 
     loadSongs();
-  }, [isClient, isOnline, session?.user?.email]);
+  }, [isClient, isInitialized, isOnline, session?.user?.email]);
 
   // Load offline audio data
   useEffect(() => {
