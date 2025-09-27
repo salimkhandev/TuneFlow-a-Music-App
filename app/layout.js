@@ -39,7 +39,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Essential Viewport Meta Tag for Mobile Responsiveness */}
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         
         {/* PWA Meta Tags */}
         <link rel="manifest" href="/manifest" />
@@ -102,7 +102,7 @@ export default function RootLayout({ children }) {
               <NavigationLoader />
               <RoutePrefetcher />
               <NetworkDetector />
-              <div className="flex flex-col h-dvh">
+              <div className="flex flex-col min-h-screen w-full">
                 <Header />
                 <ResizablePanelGroup
                   direction="horizontal"
