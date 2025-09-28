@@ -3,14 +3,15 @@ import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export function useMediaSession() {
-    const dispatch = useDispatch();
-    const { currentSong, isPlaying, queue, queueIndex } = useSelector((state) => state.player);
-    const audioRef = useRef(null);
+  const dispatch = useDispatch();
+  const { currentSong, isPlaying, queue, queueIndex } = useSelector((state) => state.player);
+  const audioRef = useRef(null);
+  const isUpdatingFromMediaSession = useRef(false);
 
-    // Get the audio element reference
-    useEffect(() => {
-        audioRef.current = document.querySelector('audio');
-    }, []);
+  // Get the audio element reference
+  useEffect(() => {
+    audioRef.current = document.querySelector('audio');
+  }, []);
 
     // Initialize Media Session API
     useEffect(() => {
@@ -37,17 +38,31 @@ export function useMediaSession() {
 
         // Set up action handlers
         const setupActionHandlers = () => {
-            // Play action
-            navigator.mediaSession.setActionHandler("play", () => {
-                console.log("Media Session: Play action triggered");
-                dispatch(togglePlayPause());
-            });
+      // Play action
+      navigator.mediaSession.setActionHandler("play", () => {
+        console.log("Media Session: Play action triggered");
+        if (!isUpdatingFromMediaSession.current) {
+          isUpdatingFromMediaSession.current = true;
+          dispatch(togglePlayPause());
+          // Reset flag after a short delay
+          setTimeout(() => {
+            isUpdatingFromMediaSession.current = false;
+          }, 100);
+        }
+      });
 
-            // Pause action
-            navigator.mediaSession.setActionHandler("pause", () => {
-                console.log("Media Session: Pause action triggered");
-                dispatch(togglePlayPause());
-            });
+      // Pause action
+      navigator.mediaSession.setActionHandler("pause", () => {
+        console.log("Media Session: Pause action triggered");
+        if (!isUpdatingFromMediaSession.current) {
+          isUpdatingFromMediaSession.current = true;
+          dispatch(togglePlayPause());
+          // Reset flag after a short delay
+          setTimeout(() => {
+            isUpdatingFromMediaSession.current = false;
+          }, 100);
+        }
+      });
 
             // Previous track action
             navigator.mediaSession.setActionHandler("previoustrack", () => {
@@ -108,30 +123,33 @@ export function useMediaSession() {
         };
     }, [currentSong, isPlaying, dispatch]);
 
-    // Update playback state when isPlaying changes
-    useEffect(() => {
-        if ("mediaSession" in navigator) {
-            navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
-        }
-    }, [isPlaying]);
+  // Update playback state when isPlaying changes
+  useEffect(() => {
+    if ("mediaSession" in navigator && !isUpdatingFromMediaSession.current) {
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    }
+  }, [isPlaying]);
 
     // Update position state for better media controls
     useEffect(() => {
         if (!("mediaSession" in navigator) || !audioRef.current || !currentSong) return;
 
-        const updatePositionState = () => {
-            if (audioRef.current && !isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
-                try {
-                    navigator.mediaSession.setPositionState({
-                        duration: audioRef.current.duration,
-                        playbackRate: audioRef.current.playbackRate || 1,
-                        position: audioRef.current.currentTime
-                    });
-                } catch (error) {
-                    console.log("Media Session position update failed:", error);
-                }
-            }
-        };
+    const updatePositionState = () => {
+      if (audioRef.current && !isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
+        try {
+          // Only update position state if we're not in the middle of a media session update
+          if (!isUpdatingFromMediaSession.current) {
+            navigator.mediaSession.setPositionState({
+              duration: audioRef.current.duration,
+              playbackRate: audioRef.current.playbackRate || 1,
+              position: audioRef.current.currentTime
+            });
+          }
+        } catch (error) {
+          console.log("Media Session position update failed:", error);
+        }
+      }
+    };
 
         // Update position state more frequently for smooth progress bar
         const interval = setInterval(updatePositionState, 500);
@@ -143,8 +161,13 @@ export function useMediaSession() {
 
         audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
 
-        // Also update immediately when song changes
-        updatePositionState();
+    // Reset position state when song changes to prevent wrong progress display
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+    
+    // Also update immediately when song changes
+    updatePositionState();
 
         return () => {
             clearInterval(interval);
