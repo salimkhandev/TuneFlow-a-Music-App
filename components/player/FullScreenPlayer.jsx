@@ -56,27 +56,6 @@ const FullScreenPlayer = ({ onClose }) => {
     };
   }, []);
 
-  // Handle browser back button to close fullscreen player
-  useEffect(() => {
-    const handlePopState = (event) => {
-      // Close the fullscreen player when back button is pressed
-      onClose();
-    };
-
-    // Add a dummy state to the history to detect back button
-    window.history.pushState({ fullscreenPlayer: true }, '');
-    
-    // Listen for popstate events (back button)
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      // Clean up the history state if component unmounts
-      if (window.history.state?.fullscreenPlayer) {
-        window.history.back();
-      }
-    };
-  }, [onClose]);
 
   // Load liked songs from DB
   useEffect(() => {
