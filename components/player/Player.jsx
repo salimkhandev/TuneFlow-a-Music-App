@@ -42,7 +42,7 @@ const Player = () => {
   const [isHydrated, setIsHydrated] = useState(false);
   // Visibility now comes from Redux: state.player.isBottomPlayerVisible
   // const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [showFullScreen, setShowFullScreen] = useState(false);
+  const [showFullScreen, setShowFullScreen] = useState(true);
 
   // Initialize Media Session API for system media controls
   useMediaSession();
