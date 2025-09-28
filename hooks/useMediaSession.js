@@ -2,9 +2,12 @@ import { nextSong, previousSong, togglePlayPause } from '@/lib/slices/playerSlic
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+// Default artwork fallback
+const DEFAULT_ARTWORK = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNTYgNDA4QzMzNy4zMzMgNDA4IDQwOCAzMzcuMzMzIDQwOCAyNTZDNDA4IDE3NC42NjcgMzM3LjMzMyAxMDQgMjU2IDEwNEMxNzQuNjY3IDEwNCAxMDQgMTc0LjY2NyAxMDQgMjU2QzEwNCAzMzcuMzMzIDE3NC42NjcgNDA4IDI1NiA0MDhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xOTIgMjA4TDE5MiAzMjBMMjU2IDI4OEwzMjAgMzIwTDMyMCAyMDhMMTkyIDIwOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+";
+
 export function useMediaSession() {
   const dispatch = useDispatch();
-  const { currentSong, isPlaying, queue, queueIndex } = useSelector((state) => state.player);
+  const { currentSong, isPlaying } = useSelector((state) => state.player);
   const audioRef = useRef(null);
   const isUpdatingFromMediaSession = useRef(false);
 
@@ -21,8 +24,7 @@ export function useMediaSession() {
         const updateMetadata = () => {
             if (!currentSong) return;
 
-            const artwork = currentSong?.image?.[currentSong.image.length - 1]?.url ||
-                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNTYgNDA4QzMzNy4zMzMgNDA4IDQwOCAzMzcuMzMzIDQwOCAyNTZDNDA4IDE3NC42NjcgMzM3LjMzMyAxMDQgMjU2IDEwNEMxNzQuNjY3IDEwNCAxMDQgMTc0LjY2NyAxMDQgMjU2QzEwNCAzMzcuMzMzIDE3NC42NjcgNDA4IDI1NiA0MDhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xOTIgMjA4TDE5MiAzMjBMMjU2IDI4OEwzMjAgMzIwTDMyMCAyMDhMMTkyIDIwOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+";
+            const artwork = currentSong?.image?.[currentSong.image.length - 1]?.url || DEFAULT_ARTWORK;
 
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: currentSong.name || "Unknown Song",
@@ -177,24 +179,4 @@ export function useMediaSession() {
         };
     }, [currentSong, isPlaying]);
 
-    return {
-        // Expose any methods if needed
-        updateMetadata: () => {
-            if (!("mediaSession" in navigator) || !currentSong) return;
-
-            const artwork = currentSong?.image?.[currentSong.image.length - 1]?.url ||
-                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNTYgNDA4QzMzNy4zMzMgNDA4IDQwOCAzMzcuMzMzIDQwOCAyNTZDNDA4IDE3NC42NjcgMzM3LjMzMyAxMDQgMjU2IDEwNEMxNzQuNjY3IDEwNCAxMDQgMTc0LjY2NyAxMDQgMjU2QzEwNCAzMzcuMzMzIDE3NC42NjcgNDA4IDI1NiA0MDhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xOTIgMjA4TDE5MiAzMjBMMjU2IDI4OEwzMjAgMzIwTDMyMCAyMDhMMTkyIDIwOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+";
-
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: currentSong.name || "Unknown Song",
-                artist: currentSong.artists?.primary?.map(artist => artist.name).join(", ") || "Unknown Artist",
-                album: currentSong.album?.name || "Unknown Album",
-                artwork: [
-                    { src: artwork, sizes: "512x512", type: "image/jpeg" },
-                    { src: artwork, sizes: "256x256", type: "image/jpeg" },
-                    { src: artwork, sizes: "128x128", type: "image/jpeg" }
-                ]
-            });
-        }
-    };
 }
