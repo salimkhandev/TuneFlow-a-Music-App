@@ -58,21 +58,32 @@ const FullScreenPlayer = ({ onClose }) => {
 
   // Handle browser back button to close fullscreen player
   useEffect(() => {
+    let hasPushedState = false;
+
     const handlePopState = (event) => {
-      // Close the fullscreen player when back button is pressed
-      onClose();
+      // Only close if we've pushed our state and user is going back
+      if (hasPushedState) {
+        onClose();
+      }
     };
 
-    // Add a dummy state to the history to detect back button
-    window.history.pushState({ fullscreenPlayer: true }, '');
-    
     // Listen for popstate events (back button)
     window.addEventListener('popstate', handlePopState);
 
+    // Add a dummy state to the history to detect back button
+    // Use requestAnimationFrame to ensure it happens after the component is fully mounted
+    const pushState = () => {
+      window.history.pushState({ fullscreenPlayer: true }, '');
+      hasPushedState = true;
+    };
+
+    const timeoutId = setTimeout(pushState, 200);
+
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('popstate', handlePopState);
       // Clean up the history state if component unmounts
-      if (window.history.state?.fullscreenPlayer) {
+      if (hasPushedState && window.history.state?.fullscreenPlayer) {
         window.history.back();
       }
     };
