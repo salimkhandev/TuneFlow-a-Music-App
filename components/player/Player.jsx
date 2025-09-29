@@ -3,21 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import {
-  hideBottomPlayer,
-  nextSong,
-  previousSong,
-  setProgress,
-  setVolume,
-  togglePlayPause,
+    hideBottomPlayer,
+    nextSong,
+    previousSong,
+    setProgress,
+    setVolume,
+    togglePlayPause,
 } from "@/lib/slices/playerSlice";
 import { getOfflineAudio, isAudioOffline } from "@/lib/utils";
 import {
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  X
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
+    Volume2,
+    X
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -427,6 +427,7 @@ const Player = () => {
                 handlePreviousSong();
               }}
               disabled={isQueueEmpty}
+              className="hover:bg-transparent md:hover:bg-muted"
             >
               <SkipBack className="h-5 w-5" />
             </Button>
@@ -438,6 +439,7 @@ const Player = () => {
               variant="outline"
               size="icon"
               disabled={!currentSong}
+              className="hover:bg-transparent md:hover:bg-muted"
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5" />
@@ -453,6 +455,7 @@ const Player = () => {
                 handleNextSong();
               }}
               disabled={isQueueEmpty}
+              className="hover:bg-transparent md:hover:bg-muted"
             >
               <SkipForward className="h-5 w-5" />
             </Button>
