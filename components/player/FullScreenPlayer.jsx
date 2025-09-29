@@ -309,7 +309,7 @@ const FullScreenPlayer = ({ onClose }) => {
             variant="ghost"
             size="icon"
             onClick={handleToggleLike}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
+            className="text-red-500 md:hover:text-red-600 md:hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
           >
             <Heart
               className={`w-3 h-3 sm:w-4 sm:h-4 ${isSongLiked(currentSong.id) ? 'fill-red-500' : ''
@@ -339,7 +339,7 @@ const FullScreenPlayer = ({ onClose }) => {
             size="icon"
             onClick={handlePreviousSong}
             disabled={isQueueEmpty}
-            className="text-foreground hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
+            className="text-foreground md:hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
           >
             <SkipBack className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
           </Button>
@@ -350,7 +350,7 @@ const FullScreenPlayer = ({ onClose }) => {
               dispatch(togglePlayPause());
             }}
             size="icon"
-            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary hover:bg-primary/90 touch-manipulation"
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary md:hover:bg-primary/90 touch-manipulation"
           >
             {isPlaying ? (
               <Pause className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
@@ -364,7 +364,7 @@ const FullScreenPlayer = ({ onClose }) => {
             size="icon"
             onClick={handleNextSong}
             disabled={isQueueEmpty}
-            className="text-foreground hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
+            className="text-foreground md:hover:bg-muted h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 touch-manipulation"
           >
             <SkipForward className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
           </Button>
