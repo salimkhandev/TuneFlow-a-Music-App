@@ -55,7 +55,21 @@ const FullScreenPlayer = ({ onClose }) => {
       document.removeEventListener('keydown', handleUserInteraction);
     };
   }, []);
+ useEffect(() => {
+    // Push a dummy state so that back button triggers popstate
+    window.history.pushState(null, "", window.location.href);
 
+    const handlePopState = (event) => {
+     onClose();
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   // Load liked songs from DB
   useEffect(() => {
