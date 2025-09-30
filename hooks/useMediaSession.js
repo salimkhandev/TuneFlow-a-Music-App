@@ -1,5 +1,5 @@
 import { nextSong, previousSong, togglePlayPause } from '@/lib/slices/playerSlice';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 // Default artwork fallback
@@ -9,174 +9,208 @@ export function useMediaSession() {
   const dispatch = useDispatch();
   const { currentSong, isPlaying } = useSelector((state) => state.player);
   const audioRef = useRef(null);
-  const isUpdatingFromMediaSession = useRef(false);
+  const isUpdatingRef = useRef(false);
+  const lastPositionUpdate = useRef(0);
+  const positionIntervalRef = useRef(null);
+  const metadataRef = useRef(null);
 
-  // Get the audio element reference
+  // Get audio element once on mount
   useEffect(() => {
     audioRef.current = document.querySelector('audio');
+    return () => {
+      audioRef.current = null;
+    };
   }, []);
 
-    // Initialize Media Session API
-    useEffect(() => {
-        if (!("mediaSession" in navigator) || !currentSong) return;
-
-        // Set up media session metadata
-        const updateMetadata = () => {
-            if (!currentSong) return;
-
-            const artwork = currentSong?.image?.[currentSong.image.length - 1]?.url || DEFAULT_ARTWORK;
-
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: currentSong.name || "Unknown Song",
-                artist: currentSong.artists?.primary?.map(artist => artist.name).join(", ") || "Unknown Artist",
-                album: currentSong.album?.name || "Unknown Album",
-                artwork: [
-                    { src: artwork, sizes: "512x512", type: "image/jpeg" },
-                    { src: artwork, sizes: "256x256", type: "image/jpeg" },
-                    { src: artwork, sizes: "128x128", type: "image/jpeg" }
-                ]
-            });
-        };
-
-        // Set up action handlers
-        const setupActionHandlers = () => {
-      // Play action
-      navigator.mediaSession.setActionHandler("play", () => {
-        console.log("Media Session: Play action triggered");
-        if (!isUpdatingFromMediaSession.current) {
-          isUpdatingFromMediaSession.current = true;
-          dispatch(togglePlayPause());
-          // Reset flag after a short delay
-          setTimeout(() => {
-            isUpdatingFromMediaSession.current = false;
-          }, 100);
-        }
+  // Memoized action handlers to prevent recreation
+  const handlePlay = useCallback(() => {
+    if (!isUpdatingRef.current) {
+      isUpdatingRef.current = true;
+      dispatch(togglePlayPause());
+      requestAnimationFrame(() => {
+        isUpdatingRef.current = false;
       });
+    }
+  }, [dispatch]);
 
-      // Pause action
-      navigator.mediaSession.setActionHandler("pause", () => {
-        console.log("Media Session: Pause action triggered");
-        if (!isUpdatingFromMediaSession.current) {
-          isUpdatingFromMediaSession.current = true;
-          dispatch(togglePlayPause());
-          // Reset flag after a short delay
-          setTimeout(() => {
-            isUpdatingFromMediaSession.current = false;
-          }, 100);
-        }
+  const handlePause = useCallback(() => {
+    if (!isUpdatingRef.current) {
+      isUpdatingRef.current = true;
+      dispatch(togglePlayPause());
+      requestAnimationFrame(() => {
+        isUpdatingRef.current = false;
       });
+    }
+  }, [dispatch]);
 
-            // Previous track action
-            navigator.mediaSession.setActionHandler("previoustrack", () => {
-                console.log("Media Session: Previous track action triggered");
-                dispatch(previousSong());
-            });
+  const handlePrevious = useCallback(() => {
+    dispatch(previousSong());
+  }, [dispatch]);
 
-            // Next track action
-            navigator.mediaSession.setActionHandler("nexttrack", () => {
-                console.log("Media Session: Next track action triggered");
-                dispatch(nextSong());
-            });
+  const handleNext = useCallback(() => {
+    dispatch(nextSong());
+  }, [dispatch]);
 
-            // Seek backward action (optional)
-            navigator.mediaSession.setActionHandler("seekbackward", (details) => {
-                console.log("Media Session: Seek backward action triggered", details);
-                if (audioRef.current) {
-                    const seekTime = details.seekTime || 10; // Default 10 seconds
-                    audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - seekTime);
-                }
-            });
+  const handleSeekBackward = useCallback((details) => {
+    if (audioRef.current) {
+      const seekTime = details?.seekTime || 10;
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - seekTime);
+    }
+  }, []);
 
-            // Seek forward action (optional)
-            navigator.mediaSession.setActionHandler("seekforward", (details) => {
-                console.log("Media Session: Seek forward action triggered", details);
-                if (audioRef.current) {
-                    const seekTime = details.seekTime || 10; // Default 10 seconds
-                    audioRef.current.currentTime = Math.min(
-                        audioRef.current.duration || 0,
-                        audioRef.current.currentTime + seekTime
-                    );
-                }
-            });
+  const handleSeekForward = useCallback((details) => {
+    if (audioRef.current) {
+      const seekTime = details?.seekTime || 10;
+      const duration = audioRef.current.duration || 0;
+      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + seekTime);
+    }
+  }, []);
 
-            // Stop action (optional)
-            navigator.mediaSession.setActionHandler("stop", () => {
-                console.log("Media Session: Stop action triggered");
-                if (audioRef.current) {
-                    audioRef.current.pause();
-                    audioRef.current.currentTime = 0;
-                }
-            });
-        };
+  const handleStop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      dispatch(togglePlayPause());
+    }
+  }, [dispatch]);
 
-        // Update metadata and setup handlers
-        updateMetadata();
-        setupActionHandlers();
+  // Optimized position update with throttling
+  const updatePositionState = useCallback(() => {
+    if (!audioRef.current || !("mediaSession" in navigator)) return;
 
-        // Update playback state
-        navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    const now = Date.now();
+    // Throttle updates to every 250ms minimum
+    if (now - lastPositionUpdate.current < 250) return;
 
-        // Cleanup function
-        return () => {
-            if ("mediaSession" in navigator) {
-                // Clear metadata when component unmounts or song changes
-                navigator.mediaSession.metadata = null;
-            }
-        };
-    }, [currentSong, isPlaying, dispatch]);
+    const { duration, currentTime, playbackRate = 1 } = audioRef.current;
 
-  // Update playback state when isPlaying changes
+    if (!isNaN(duration) && duration > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration,
+          playbackRate,
+          position: currentTime
+        });
+        lastPositionUpdate.current = now;
+      } catch (error) {
+        // Silently handle errors to avoid console spam
+      }
+    }
+  }, []);
+
+  // Initialize and update Media Session
   useEffect(() => {
-    if ("mediaSession" in navigator && !isUpdatingFromMediaSession.current) {
+    if (!("mediaSession" in navigator)) return;
+
+    // Only update metadata if song actually changed
+    if (currentSong) {
+      const newMetadata = {
+        title: currentSong.name || "Unknown Song",
+        artist: currentSong.artists?.primary?.map(a => a.name).join(", ") || "Unknown Artist",
+        album: currentSong.album?.name || "Unknown Album",
+      };
+
+      // Check if metadata actually changed
+      const metadataChanged = !metadataRef.current ||
+        metadataRef.current.title !== newMetadata.title ||
+        metadataRef.current.artist !== newMetadata.artist ||
+        metadataRef.current.album !== newMetadata.album;
+
+      if (metadataChanged) {
+        const artwork = currentSong?.image?.[currentSong.image.length - 1]?.url || DEFAULT_ARTWORK;
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          ...newMetadata,
+          artwork: [
+            { src: artwork, sizes: "512x512", type: "image/jpeg" },
+            { src: artwork, sizes: "256x256", type: "image/jpeg" },
+            { src: artwork, sizes: "128x128", type: "image/jpeg" }
+          ]
+        });
+
+        metadataRef.current = newMetadata;
+      }
+
+      // Set up action handlers only once per song
+      navigator.mediaSession.setActionHandler("play", handlePlay);
+      navigator.mediaSession.setActionHandler("pause", handlePause);
+      navigator.mediaSession.setActionHandler("previoustrack", handlePrevious);
+      navigator.mediaSession.setActionHandler("nexttrack", handleNext);
+      navigator.mediaSession.setActionHandler("seekbackward", handleSeekBackward);
+      navigator.mediaSession.setActionHandler("seekforward", handleSeekForward);
+      navigator.mediaSession.setActionHandler("stop", handleStop);
+    }
+
+    return () => {
+      if ("mediaSession" in navigator && !currentSong) {
+        navigator.mediaSession.metadata = null;
+        metadataRef.current = null;
+      }
+    };
+  }, [currentSong, handlePlay, handlePause, handlePrevious, handleNext, handleSeekBackward, handleSeekForward, handleStop]);
+
+  // Update playback state separately for better performance
+  useEffect(() => {
+    if ("mediaSession" in navigator && !isUpdatingRef.current) {
       navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
     }
   }, [isPlaying]);
 
-    // Update position state for better media controls
-    useEffect(() => {
-        if (!("mediaSession" in navigator) || !audioRef.current || !currentSong) return;
+  // Optimized position state updates
+  useEffect(() => {
+    if (!currentSong || !audioRef.current) return;
 
-    const updatePositionState = () => {
-      if (audioRef.current && !isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
-        try {
-          // Only update position state if we're not in the middle of a media session update
-          if (!isUpdatingFromMediaSession.current) {
-            navigator.mediaSession.setPositionState({
-              duration: audioRef.current.duration,
-              playbackRate: audioRef.current.playbackRate || 1,
-              position: audioRef.current.currentTime
-            });
-          }
-        } catch (error) {
-          console.log("Media Session position update failed:", error);
-        }
+    // Clear any existing interval
+    if (positionIntervalRef.current) {
+      clearInterval(positionIntervalRef.current);
+    }
+
+    // Reset position for new song
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      lastPositionUpdate.current = 0;
+    }
+
+    // Immediate update
+    updatePositionState();
+
+    // Use requestAnimationFrame for smooth updates when playing
+    let rafId = null;
+    const updateLoop = () => {
+      if (isPlaying) {
+        updatePositionState();
+        rafId = requestAnimationFrame(updateLoop);
       }
     };
 
-        // Update position state more frequently for smooth progress bar
-        const interval = setInterval(updatePositionState, 500);
-
-        // Also listen to timeupdate events for real-time updates
-        const handleTimeUpdate = () => {
-            updatePositionState();
-        };
-
-        audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
-
-    // Reset position state when song changes to prevent wrong progress display
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
+    if (isPlaying) {
+      rafId = requestAnimationFrame(updateLoop);
     }
-    
-    // Also update immediately when song changes
-    updatePositionState();
 
-        return () => {
-            clearInterval(interval);
-            if (audioRef.current) {
-                audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
-            }
-        };
-    }, [currentSong, isPlaying]);
+    // Fallback interval for when not playing (less frequent)
+    if (!isPlaying) {
+      positionIntervalRef.current = setInterval(updatePositionState, 1000);
+    }
 
+    // Listen to seek events for immediate updates
+    const handleSeeked = () => {
+      lastPositionUpdate.current = 0; // Force immediate update
+      updatePositionState();
+    };
+
+    audioRef.current?.addEventListener('seeked', handleSeeked);
+    audioRef.current?.addEventListener('loadedmetadata', updatePositionState);
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      if (positionIntervalRef.current) {
+        clearInterval(positionIntervalRef.current);
+        positionIntervalRef.current = null;
+      }
+      audioRef.current?.removeEventListener('seeked', handleSeeked);
+      audioRef.current?.removeEventListener('loadedmetadata', updatePositionState);
+    };
+  }, [currentSong, isPlaying, updatePositionState]);
 }
