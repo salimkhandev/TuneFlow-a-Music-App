@@ -47,9 +47,9 @@ export function useMediaSession() {
           isUpdatingFromMediaSession.current = true;
           dispatch(togglePlayPause());
           // Reset flag after a short delay
-          // setTimeout(() => {
-          //   isUpdatingFromMediaSession.current = false;
-          // }, 100);
+          setTimeout(() => {
+            isUpdatingFromMediaSession.current = false;
+          }, 100);
         }
       });
 
@@ -60,9 +60,9 @@ export function useMediaSession() {
           isUpdatingFromMediaSession.current = true;
           dispatch(togglePlayPause());
           // Reset flag after a short delay
-          // setTimeout(() => {
-          //   isUpdatingFromMediaSession.current = false;
-          // }, 100);
+          setTimeout(() => {
+            isUpdatingFromMediaSession.current = false;
+          }, 100);
         }
       });
 
