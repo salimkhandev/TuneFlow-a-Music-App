@@ -2,6 +2,11 @@
 import Loader from "@/components/loader/Loader";
 import { SongList } from "@/components/song-list/SongList";
 import { Button } from "@/components/ui/button";
+import {
+  useGetLikedSongsQuery,
+  useLikeSongMutation,
+  useUnlikeSongMutation,
+} from "@/lib/api/likedSongsApi";
 import { fetchSongs } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -12,7 +17,11 @@ const Page = () => {
   const [songs, setSongs] = useState([]);
   const [currentQuery, setCurrentQuery] = useState("a"); // Start with 'a'
   const [limit, setLimit] = useState(50);
-  const [likedSongs, setLikedSongs] = useState([]);
+  const shouldFetchLiked = Boolean(session?.user?.email);
+  const { data: likedData } = useGetLikedSongsQuery(undefined, { skip: !shouldFetchLiked });
+  const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
+  const [ likeSong ] = useLikeSongMutation();
+  const [ unlikeSong ] = useUnlikeSongMutation();
   const [isClient, setIsClient] = useState(false);
 
   const handleFetchSongs = async (query) => {
@@ -38,14 +47,7 @@ const Page = () => {
     handleFetchSongs(currentQuery);
   }, []);
 
-  // Load liked songs from DB
-  useEffect(() => {
-    if (!isClient || !session?.user) return;
-    fetch('/api/liked-songs')
-      .then(r => r.json())
-      .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
-      .catch(() => setLikedSongs([]));
-  }, [isClient, session?.user?.email]);
+  // liked songs are sourced via RTK Query above
 
   const loadMoreSongs = () => {
     if (currentQuery >= "z") return; // Stop at 'z'
@@ -57,27 +59,13 @@ const Page = () => {
 
   const handleToggleLike = async (song) => {
     if (!session?.user) return;
-    
     const isLiked = likedSongs.some(likedSong => likedSong.id === song.id);
-    
     try {
       if (isLiked) {
-        // Remove from liked
-        await fetch('/api/liked-songs', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ songId: song.id })
-        });
-        setLikedSongs(prev => prev.filter(likedSong => likedSong.id !== song.id));
+        await unlikeSong(song.id).unwrap();
       } else {
-        // Add to liked
         const songWithTimestamp = { ...song, likedAt: new Date().toISOString() };
-        await fetch('/api/liked-songs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ song: songWithTimestamp })
-        });
-        setLikedSongs(prev => [...prev, songWithTimestamp]);
+        await likeSong(songWithTimestamp).unwrap();
       }
     } catch (error) {
       console.error('Error toggling like:', error);
