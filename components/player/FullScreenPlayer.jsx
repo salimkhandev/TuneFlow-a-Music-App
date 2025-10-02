@@ -2,6 +2,11 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
+  useGetLikedSongsQuery,
+  useLikeSongMutation,
+  useUnlikeSongMutation,
+} from "@/lib/api/likedSongsApi";
+import {
   nextSong,
   previousSong,
   setProgress,
@@ -26,7 +31,6 @@ const FullScreenPlayer = ({ onClose }) => {
     useSelector((state) => state.player);
   // No audio ref needed - uses bottom player's audio
   const [localProgress, setLocalProgress] = useState(0);
-  const [likedSongs, setLikedSongs] = useState([]);
   const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
@@ -71,23 +75,12 @@ const FullScreenPlayer = ({ onClose }) => {
     };
   }, []);
 
-  // Load liked songs from DB
-  useEffect(() => {
-    if (!isClient || !session?.user) return;
-    fetch('/api/liked-songs')
-      .then(r => r.json())
-      .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
-      .catch(() => setLikedSongs([]));
-  }, [isClient, session]);
-
-  // Reload liked songs when user changes
-  useEffect(() => {
-    if (!isClient || !session?.user) return;
-    fetch('/api/liked-songs')
-      .then(r => r.json())
-      .then(d => setLikedSongs(Array.isArray(d.items) ? d.items : []))
-      .catch(() => setLikedSongs([]));
-  }, [isClient, session?.user?.email]);
+	// RTK Query: read liked songs when user is authenticated
+	const shouldFetchLiked = Boolean(session?.user?.email);
+	const { data: likedData } = useGetLikedSongsQuery(undefined, { skip: !shouldFetchLiked });
+	const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
+	const [likeSong] = useLikeSongMutation();
+	const [unlikeSong] = useUnlikeSongMutation();
 
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = () => {
@@ -117,24 +110,24 @@ const FullScreenPlayer = ({ onClose }) => {
   }, [likedSongs]);
 
   // Handle like/unlike song
-  const handleToggleLike = useCallback(() => {
+	const handleToggleLike = useCallback(async () => {
     if (!isClient || !currentSong) return;
     if (!session?.user) {
       signIn("google", { callbackUrl: "/" });
       return;
     }
     const isAlready = likedSongs.some(s => s.id === currentSong.id);
+		try {
     if (isAlready) {
-      fetch(`/api/liked-songs?songId=${encodeURIComponent(currentSong.id)}`, { method: 'DELETE' })
-        .then(() => setLikedSongs(prev => prev.filter(s => s.id !== currentSong.id)))
-        .catch(() => {});
+				await unlikeSong(currentSong.id).unwrap();
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
-      fetch('/api/liked-songs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ song: songWithTimestamp }) })
-        .then(() => setLikedSongs(prev => [...prev, songWithTimestamp]))
-        .catch(() => {});
-    }
-  }, [isClient, currentSong, session, likedSongs]);
+				await likeSong(songWithTimestamp).unwrap();
+			}
+		} catch (e) {
+			// no-op, network/UI will remain consistent via RTK Query
+		}
+	}, [isClient, currentSong, session, likedSongs, likeSong, unlikeSong]);
 
   // Get reference to the bottom player's audio element
   const getAudioElement = () => {

@@ -1,6 +1,11 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  useGetLikedSongsQuery,
+  useLikeSongMutation,
+  useUnlikeSongMutation,
+} from "@/lib/api/likedSongsApi";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
 import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2 } from "lucide-react";
@@ -30,51 +35,43 @@ const LikedSongs = () => {
     setIsClient(true);
   }, []);
 
-  // Load liked songs from DB or offline storage based on network status
+  // RTK Query: online fetch with skip when offline/unauthenticated
+  const shouldFetch = Boolean(isOnline && isInitialized && session?.user?.email);
+  const { data: likedData } = useGetLikedSongsQuery(undefined, { skip: !shouldFetch });
+  const [likeSong] = useLikeSongMutation();
+  const [unlikeSong] = useUnlikeSongMutation();
+
+  // Load liked songs from RTK Query (online) or offline storage (IDB)
   useEffect(() => {
-    if (!isClient || !isInitialized) return; // ✅ Wait for network detection to initialize
+    if (!isClient || !isInitialized) return;
 
     const loadSongs = async () => {
-      if (isOnline && session?.user) {
-        // Online: Load from network database
-        try {
-          const response = await fetch('/api/liked-songs');
-          const data = await response.json();
-          setLikedSongs(Array.isArray(data.items) ? data.items : []);
-          console.log('🌐 Loaded liked songs from network:', data.items?.length || 0);
-        } catch (error) {
-          console.error('Failed to load liked songs from network:', error);
-          setLikedSongs([]);
-        }
+      if (shouldFetch) {
+        setLikedSongs(Array.isArray(likedData?.items) ? likedData.items : []);
       } else {
-        // Offline: Load only offline songs from IDB metadata store
         try {
           const db = await initOfflineAudioDB();
           if (!db) {
             setLikedSongs([]);
             return;
           }
-          
+
           const transaction = db.transaction(['offlineMetadata'], 'readonly');
           const store = transaction.objectStore('offlineMetadata');
-          
+
           const offlineSongs = await new Promise((resolve, reject) => {
             const request = store.getAll();
             request.onsuccess = () => resolve(request.result || []);
             request.onerror = () => reject(request.error);
           });
-          
-          // Convert songId to id for consistency and ensure proper structure
+
           const formattedSongs = offlineSongs.map(song => ({
             ...song,
             id: song.songId,
-            // Ensure downloadUrl exists for offline songs (player needs this)
             downloadUrl: song.downloadUrl || [{ url: '', quality: 'offline' }]
           }));
-          
+
           setLikedSongs(formattedSongs);
-          console.log('📱 Loaded offline songs with complete metadata:', formattedSongs.length);
-          console.log('📱 Sample offline song:', formattedSongs[0]);
         } catch (error) {
           console.error('Failed to load offline songs:', error);
           setLikedSongs([]);
@@ -83,7 +80,7 @@ const LikedSongs = () => {
     };
 
     loadSongs();
-  }, [isClient, isInitialized, isOnline, session?.user?.email]);
+  }, [isClient, isInitialized, shouldFetch, likedData?.items]);
 
   // Load offline audio data
   useEffect(() => {
@@ -140,32 +137,31 @@ const LikedSongs = () => {
 
   const handleRemoveFromLiked = async (songId) => {
     if (!isClient || !session?.user) return;
-    
     try {
-      // Remove from liked songs
-      await fetch(`/api/liked-songs?songId=${encodeURIComponent(songId)}`, { method: 'DELETE' });
+      await unlikeSong(songId).unwrap();
       setLikedSongs(prev => prev.filter(s => s.id !== songId));
-      
-      // Also remove from offline storage if it exists
       const isOffline = await isAudioOffline(songId);
       if (isOffline) {
         await removeAudioOffline(songId);
-        // Refresh offline data
         const audio = await getAllOfflineAudio();
         const size = await getOfflineAudioSize();
         const count = await getOfflineAudioCount();
         setOfflineAudio(audio);
         setOfflineStorageSize(size);
         setOfflineCount(count);
-        console.log('🗑️ Song removed from both liked songs and offline storage');
       }
     } catch (error) {
       console.error('❌ Error removing song from liked songs:', error);
     }
   };
 
-  const handleToggleLike = (song) => {
-    handleRemoveFromLiked(song.id);
+  const handleToggleLike = async (song) => {
+    try {
+      await likeSong(song).unwrap();
+      setLikedSongs(prev => [song, ...prev.filter(s => s.id !== song.id)]);
+    } catch (error) {
+      console.error('❌ Error liking song:', error);
+    }
   };
 
   const handleDownload = (song) => {
