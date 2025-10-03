@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
   useGetLikedSongsQuery,
+  useGetSongLikeStatusQuery,
   useLikeSongMutation,
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
@@ -79,6 +80,13 @@ const FullScreenPlayer = ({ onClose }) => {
 	const shouldFetchLiked = Boolean(session?.user?.email);
 	const { data: likedData } = useGetLikedSongsQuery(undefined, { skip: !shouldFetchLiked });
 	const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
+	
+	// Fast like status check for current song
+	const { data: likeStatus } = useGetSongLikeStatusQuery(currentSong?.id, { 
+		skip: !shouldFetchLiked || !currentSong?.id 
+	});
+	const isCurrentSongLiked = likeStatus?.isLiked ?? false;
+	
 	const [likeSong] = useLikeSongMutation();
 	const [unlikeSong] = useUnlikeSongMutation();
 
@@ -104,10 +112,7 @@ const FullScreenPlayer = ({ onClose }) => {
     a.remove();
   };
 
-  // Check if current song is liked
-  const isSongLiked = useCallback((songId) => {
-    return likedSongs.some(likedSong => likedSong.id === songId);
-  }, [likedSongs]);
+  // Fast like status check - now using RTK Query directly
 
   // Handle like/unlike song
 	const handleToggleLike = useCallback(async () => {
@@ -116,18 +121,17 @@ const FullScreenPlayer = ({ onClose }) => {
       signIn("google", { callbackUrl: "/" });
       return;
     }
-    const isAlready = likedSongs.some(s => s.id === currentSong.id);
 		try {
-    if (isAlready) {
+    if (isCurrentSongLiked) {
 				await unlikeSong(currentSong.id).unwrap();
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
-				await likeSong(songWithTimestamp).unwrap();
-			}
+      await likeSong(songWithTimestamp).unwrap();
+    }
 		} catch (e) {
 			// no-op, network/UI will remain consistent via RTK Query
 		}
-	}, [isClient, currentSong, session, likedSongs, likeSong, unlikeSong]);
+	}, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong]);
 
   // Get reference to the bottom player's audio element
   const getAudioElement = () => {
@@ -305,7 +309,7 @@ const FullScreenPlayer = ({ onClose }) => {
           className="text-red-500 bg-transparent active:bg-transparent focus:bg-transparent md:hover:text-red-600 md:hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
           >
             <Heart
-              className={`w-3 h-3 sm:w-4 sm:h-4 ${isSongLiked(currentSong.id) ? 'fill-red-500' : ''
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${isCurrentSongLiked ? 'fill-red-500' : ''
                 }`}
             />
           </Button>

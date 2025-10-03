@@ -19,11 +19,11 @@ export const authOptions = {
         token.name = profile.name;  
         token.email = profile.email;
       }
-      console.log("[next-auth][jwt] token:", {
-        name: token?.name,
-        email: token?.email,
-        hasPicture: Boolean(token?.picture),
-      });
+      // console.log("[next-auth][jwt] token:", {
+      //   name: token?.name,
+      //   email: token?.email,
+      //   hasPicture: Boolean(token?.picture),
+      // });
       return token;
     },
     async session({ session, token }) {
@@ -34,14 +34,14 @@ export const authOptions = {
           image: token.picture,
         };
       }
-      console.log("[next-auth][session] session:", {
-        isAuthenticated: Boolean(session?.user?.email),
-        user: {
-          name: session?.user?.name,
-          email: session?.user?.email,
-          hasImage: Boolean(session?.user?.image),
-        },
-      });
+      // console.log("[next-auth][session] session:", {
+      //   isAuthenticated: Boolean(session?.user?.email),
+      //   user: {
+      //     name: session?.user?.name,
+      //     email: session?.user?.email,
+      //     hasImage: Boolean(session?.user?.image),
+      //   },
+      // });
       return session;
     },
   },

@@ -4,6 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import {
   useGetLikedSongsQuery,
+  useGetSongLikeStatusQuery,
   useLikeSongMutation,
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
@@ -79,6 +80,13 @@ const Player = () => {
   const shouldFetchLiked = Boolean(session?.user?.email);
   const { data: likedData } = useGetLikedSongsQuery(undefined, { skip: !shouldFetchLiked });
   const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
+  
+  // Fast like status check for current song
+  const { data: likeStatus } = useGetSongLikeStatusQuery(currentSong?.id, { 
+    skip: !shouldFetchLiked || !currentSong?.id 
+  });
+  const isCurrentSongLiked = likeStatus?.isLiked ?? false;
+  
   const [likeSong] = useLikeSongMutation();
   const [unlikeSong] = useUnlikeSongMutation();
 
@@ -118,10 +126,7 @@ const Player = () => {
 
 
 
-  // Check if current song is liked
-  const isSongLiked = useCallback((songId) => {
-    return likedSongs.some(likedSong => likedSong.id === songId);
-  }, [likedSongs]);
+  // Fast like status check - now using RTK Query directly
 
   // Handle like/unlike song
   const handleToggleLike = useCallback(async () => {
@@ -130,7 +135,7 @@ const Player = () => {
       signIn("google", { callbackUrl: "/" });
       return;
     }
-    const isAlready = likedSongs.some(s => s.id === currentSong.id);
+    const isAlready = isCurrentSongLiked;
     try {
       if (isAlready) {
         await unlikeSong(currentSong.id).unwrap();
@@ -141,7 +146,7 @@ const Player = () => {
     } catch (_) {
       // noop
     }
-  }, [isClient, currentSong, session, likedSongs, likeSong, unlikeSong]);
+  }, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong]);
 
   // Initialize/load audio element - ONLY when currentSong changes
   useEffect(() => {

@@ -98,6 +98,7 @@ export async function DELETE(request) {
     }
     await ensureSchema();
     const { searchParams } = new URL(request.url);
+    console.log('searchParams', searchParams);
     const songId = searchParams.get("songId");
     if (!songId) {
       return new Response(JSON.stringify({ error: "songId required" }), { status: 400 });
