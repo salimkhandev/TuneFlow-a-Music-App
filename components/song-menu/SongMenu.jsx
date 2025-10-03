@@ -24,6 +24,8 @@ const SongMenu = ({
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [touchStartTime, setTouchStartTime] = useState(0);
+  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
+  const [didMove, setDidMove] = useState(false);
 
   const handleToggleLike = (e) => {
     e.stopPropagation();
@@ -48,13 +50,29 @@ const SongMenu = ({
     setIsOpen(false);
   };
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e) => {
     setTouchStartTime(Date.now());
+    if (e.touches && e.touches[0]) {
+      setTouchStartPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      setDidMove(false);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!e.touches || !e.touches[0]) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartPos.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartPos.y);
+    // If user moved finger more than 8px, treat as scroll gesture
+    if (dx > 8 || dy > 8) {
+      setDidMove(true);
+      if (isOpen) setIsOpen(false);
+    }
   };
 
   const handleClick = (e) => {
     e.stopPropagation();
-    // Only open if touch was held for at least 100ms (prevents accidental scroll opens)
+    // Ignore if finger moved (scroll) or touch was too short
+    if (didMove) return;
     if (Date.now() - touchStartTime >= 100) {
       setIsOpen(true);
     }
@@ -62,13 +80,14 @@ const SongMenu = ({
 
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className={`h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ${className}`}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onClick={handleClick}
           style={{ touchAction: 'manipulation' }}
         >
