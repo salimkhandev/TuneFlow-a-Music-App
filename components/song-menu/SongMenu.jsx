@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CheckCircle, Download, HardDrive, Heart, MoreHorizontal } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SongMenu = ({ 
   song, 
@@ -26,6 +26,7 @@ const SongMenu = ({
   const [touchStartTime, setTouchStartTime] = useState(0);
   const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
   const [didMove, setDidMove] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleToggleLike = (e) => {
     e.stopPropagation();
@@ -78,10 +79,43 @@ const SongMenu = ({
     }
   };
 
+  // Auto-close dropdown when it goes out of viewport
+  useEffect(() => {
+    if (!isOpen || !dropdownRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            setIsOpen(false);
+          }
+        });
+      },
+      { 
+        root: null, 
+        rootMargin: '0px',
+        threshold: 0.1 
+      }
+    );
+
+    // Find the dropdown content element
+    const dropdownContent = dropdownRef.current.querySelector('[data-radix-popper-content-wrapper]') || 
+                           dropdownRef.current.querySelector('[role="menu"]');
+    
+    if (dropdownContent) {
+      observer.observe(dropdownContent);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isOpen]);
+
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
-      <DropdownMenuTrigger asChild>
+      <div ref={dropdownRef}>
+        <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
@@ -140,6 +174,7 @@ const SongMenu = ({
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
+      </div>
     </DropdownMenu>
   );
 };
