@@ -83,7 +83,7 @@ export function Sidebar() {
   const filteredRoutes = isOnline ? routes : [routes[1]]; // routes[1] is the liked songs route
 
   return (
-    <div className="flex flex-col h-full bg-card w-full overflow-auto scrollbar-hidden">
+    <div className="flex  flex-col h-full bg-card w-full overflow-auto scrollbar-hidden">
       <div className="flex flex-row sm:flex-col gap-2 sm:p-4">
         {filteredRoutes.map((route) => (
           <Link key={route.href} href={route.href} prefetch={true}>

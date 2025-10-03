@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/likedSongsApi";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
 import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
-import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2 } from "lucide-react";
+import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,6 +29,7 @@ const LikedSongs = () => {
   const [offlineCount, setOfflineCount] = useState(0);
   const [isStoring, setIsStoring] = useState(false);
   const [storingSongId, setStoringSongId] = useState(null);
+  const [showOfflineInfo, setShowOfflineInfo] = useState(false);
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -322,7 +323,7 @@ const LikedSongs = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 relative">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
         <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-2xl">
@@ -340,7 +341,61 @@ const LikedSongs = () => {
             <span>{likedSongs.length} songs</span>
           </div>
         </div>
+
+        {/* Inline Offline info trigger now positioned globally at top-right of page content */}
+        
       </div>
+      {/* Top-right anchored button */}
+      <div className="absolute top-2 right-2 md:top-4 md:right-6 z-20">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowOfflineInfo((v) => !v)}
+          className="rounded-full shadow-sm"
+          title="Offline audio info"
+        >
+          <HardDrive className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {showOfflineInfo && (
+        <div className="absolute right-2 md:right-6 top-12 md:top-16 w-64 sm:w-72 md:w-80 max-w-[85vw] bg-background/95 backdrop-blur border rounded-lg p-4 shadow-xl z-20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold">Offline Audio Storage</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowOfflineInfo(false)}
+              className="h-8 w-8"
+              aria-label="Close offline info"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+            <span>Storage used</span>
+            <span>{offlineStorageSize} MB</span>
+          </div>
+          <div className="text-sm text-muted-foreground mb-4">
+            {offlineCount} audio files available offline
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleClearAllOffline()}
+              disabled={offlineCount === 0}
+              className="text-red-500 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All Offline
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex items-center justify-center sm:justify-start gap-4">
@@ -354,35 +409,7 @@ const LikedSongs = () => {
         </Button>
       </div>
 
-      {/* Offline Audio Storage Section */}
-      <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HardDrive className="w-5 h-5 text-blue-500" />
-            <h3 className="font-semibold">Offline Audio Storage</h3>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {offlineStorageSize} MB used
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleClearAllOffline()}
-            disabled={offlineCount === 0}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All Offline
-          </Button>
-        </div>
-        
-        <div className="text-sm text-muted-foreground">
-          {offlineCount} audio files available offline
-        </div>
-      </div>
+      {/* Removed floating versions; panel is anchored inline to header button on desktop */}
 
       {/* Songs List */}
       <div className="space-y-2">
