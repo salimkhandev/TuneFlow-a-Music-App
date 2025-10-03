@@ -23,6 +23,7 @@ const SongMenu = ({
 }) => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [touchStartTime, setTouchStartTime] = useState(0);
 
   const handleToggleLike = (e) => {
     e.stopPropagation();
@@ -47,6 +48,18 @@ const SongMenu = ({
     setIsOpen(false);
   };
 
+  const handleTouchStart = () => {
+    setTouchStartTime(Date.now());
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    // Only open if touch was held for at least 100ms (prevents accidental scroll opens)
+    if (Date.now() - touchStartTime >= 100) {
+      setIsOpen(true);
+    }
+  };
+
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -55,7 +68,9 @@ const SongMenu = ({
           variant="ghost"
           size="icon"
           className={`h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ${className}`}
-          onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onClick={handleClick}
+          style={{ touchAction: 'manipulation' }}
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>

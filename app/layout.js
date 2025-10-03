@@ -4,7 +4,6 @@ import { NavigationLoader } from "@/components/navigation/NavigationLoader";
 import { NetworkDetector } from '@/components/NetworkDetector/NetworkDetector';
 import Player from "@/components/player/Player";
 import PWAInstallButton from "@/components/pwa-install/PWAInstallButton";
-import { RoutePrefetcher } from "@/components/RoutePrefetcher";
 import ServiceWorker from "@/components/ServiceWorker";
 import AppSessionProvider from "@/components/session-provider/SessionProvider";
 import { Sidebar } from "@/components/sidebar/Sidebar";
@@ -97,7 +96,7 @@ export default function RootLayout({ children }) {
             <CustomThemeProvider defaultTheme="default">
 
               <NavigationLoader />
-              <RoutePrefetcher />
+              {/** RoutePrefetcher removed for performance testing **/}
               <NetworkDetector />
               <div className="flex flex-col h-dvh">
                 <Header />
