@@ -10,7 +10,7 @@ import { decodeHtmlEntities } from "@/lib/utils";
 import { AudioLines, Pause, Play } from "lucide-react";
 import { memo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import SongMenu from "../song-menu/SongMenu"; 
+import SongMenu from "../song-menu/SongMenu";
 
 
 // Memoized SongItem component to prevent unnecessary re-renders
