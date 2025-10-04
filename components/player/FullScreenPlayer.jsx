@@ -13,7 +13,7 @@ import {
   setProgress,
   togglePlayPause
 } from "@/lib/slices/playerSlice";
-import { isAudioOffline, removeAudioOffline } from "@/lib/utils";
+import { getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, isAudioOffline, removeAudioOffline } from "@/lib/utils";
 import {
   ArrowLeft,
   Heart,
@@ -130,6 +130,10 @@ const FullScreenPlayer = ({ onClose }) => {
       const isOfflineSong = await isAudioOffline(currentSong.id);
       if (isOfflineSong) {
         await removeAudioOffline(currentSong.id);
+        const audio = await getAllOfflineAudio();
+        const size = await getOfflineAudioSize();
+        const count = await getOfflineAudioCount();
+        updateOfflineData({ audio, size, count });
         console.log('🗑️ Removed offline song from IndexedDB:', currentSong.id);
         
         // Dispatch custom event to notify other components

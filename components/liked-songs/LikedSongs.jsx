@@ -6,11 +6,12 @@ import {
   useLikeSongMutation,
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
+import { useOffline, useOfflineSongIds } from "@/lib/hooks/useOffline";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
 import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Loader from "../loader/Loader";
 import SongMenu from "../song-menu/SongMenu";
@@ -24,20 +25,29 @@ const LikedSongs = () => {
   const { data: session } = useSession();
   const [isClient, setIsClient] = useState(false);
   
-  // Offline audio states
-  const [offlineAudio, setOfflineAudio] = useState([]);
-  const [offlineStorageSize, setOfflineStorageSize] = useState(0);
-  const [offlineCount, setOfflineCount] = useState(0);
-  const [isStoring, setIsStoring] = useState(false);
-  const [storingSongId, setStoringSongId] = useState(null);
-  const [showOfflineInfo, setShowOfflineInfo] = useState(false);
+  // Offline audio states from Redux
+  const {
+    offlineAudio,
+    offlineStorageSize,
+    offlineCount,
+    isStoring,
+    storingSongId,
+    showOfflineInfo,
+    setOfflineAudio,
+    setOfflineStorageSize,
+    setOfflineCount,
+    setIsStoring,
+    setStoringSongId,
+    setShowOfflineInfo,
+    updateOfflineData,
+    clearOfflineData,
+    addOfflineAudio,
+    removeOfflineAudio
+  } = useOffline();
   const [isLoadingSongs, setIsLoadingSongs] = useState(true);
   
-  // Memoize offline song IDs for performance
-  const offlineSongIds = useMemo(() => 
-    new Set(offlineAudio.map(audio => audio.songId)), 
-    [offlineAudio]
-  );
+  // Get offline song IDs from Redux
+  const offlineSongIds = useOfflineSongIds();
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -108,9 +118,7 @@ const LikedSongs = () => {
       const audio = await getAllOfflineAudio();
       const size = await getOfflineAudioSize();
       const count = await getOfflineAudioCount();
-      setOfflineAudio(audio);
-      setOfflineStorageSize(size);
-      setOfflineCount(count);
+      updateOfflineData({ audio, size, count });
     };
     
     loadOfflineData();
@@ -166,9 +174,7 @@ const LikedSongs = () => {
         const audio = await getAllOfflineAudio();
         const size = await getOfflineAudioSize();
         const count = await getOfflineAudioCount();
-        setOfflineAudio(audio);
-        setOfflineStorageSize(size);
-        setOfflineCount(count);
+        updateOfflineData({ audio, size, count });
       }
     } catch (error) {
       console.error('❌ Error removing song from liked songs:', error);
@@ -179,6 +185,12 @@ const LikedSongs = () => {
     try {
       // Since we're in LikedSongs page, this should always remove the song
       await unlikeSong(song.id).unwrap();
+      // delete from the idb
+      await removeAudioOffline(song.id);
+      const audio = await getAllOfflineAudio();
+      const size = await getOfflineAudioSize();
+      const count = await getOfflineAudioCount();
+      updateOfflineData({ audio, size, count });
       
       // Remove song from IndexedDB when unliked
       const isOfflineSong = await isAudioOffline(song.id);
@@ -229,9 +241,7 @@ const LikedSongs = () => {
         const audio = await getAllOfflineAudio();
         const size = await getOfflineAudioSize();
         const count = await getOfflineAudioCount();
-        setOfflineAudio(audio);
-        setOfflineStorageSize(size);
-        setOfflineCount(count);
+        updateOfflineData({ audio, size, count });
         console.log('✅ Audio stored offline successfully');
       }
     } catch (error) {
@@ -253,24 +263,22 @@ const LikedSongs = () => {
         }
         
         // If the removed song is currently playing, stop playback and clear audio
-        if (currentSong?.id === songId) {
-          dispatch(togglePlayPause()); // This will pause the current song
-          // Force clear the audio element to prevent stale URL issues
-          const audioElement = document.querySelector('audio');
-          if (audioElement) {
-            audioElement.pause();
-            audioElement.src = '';
-            audioElement.load();
-          }
-        }
+        // if (currentSong?.id === songId) {
+        //   dispatch(togglePlayPause()); // This will pause the current song
+        //   // Force clear the audio element to prevent stale URL issues
+        //   const audioElement = document.querySelector('audio');
+        //   if (audioElement) {
+        //     audioElement.pause();
+        //     audioElement.src = '';
+        //     audioElement.load();
+        //   }
+        // }
         
         // Refresh offline data
         const audio = await getAllOfflineAudio();
         const size = await getOfflineAudioSize();
         const count = await getOfflineAudioCount();
-        setOfflineAudio(audio);
-        setOfflineStorageSize(size);
-        setOfflineCount(count);
+        updateOfflineData({ audio, size, count });
         console.log('✅ Audio removed from offline storage', isOnline ? '(kept in liked songs)' : '(removed from liked songs)');
       }
     } catch (error) {
@@ -283,9 +291,7 @@ const LikedSongs = () => {
     try {
       const success = await clearAllOfflineAudio();
       if (success) {
-        setOfflineAudio([]);
-        setOfflineStorageSize(0);
-        setOfflineCount(0);
+        clearOfflineData();
         console.log('✅ All offline audio cleared');
       }
     } catch (error) {
