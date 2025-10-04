@@ -232,8 +232,10 @@ const LikedSongs = () => {
     try {
       const success = await removeAudioOffline(songId);
       if (success) {
-        // Remove song from likedSongs list immediately (efficient update)
-        setLikedSongs(prev => prev.filter(song => song.id !== songId));
+        // Only remove from likedSongs list when offline
+        if (!isOnline) {
+          setLikedSongs(prev => prev.filter(song => song.id !== songId));
+        }
         
         // If the removed song is currently playing, stop playback and clear audio
         if (currentSong?.id === songId) {
@@ -254,7 +256,7 @@ const LikedSongs = () => {
         setOfflineAudio(audio);
         setOfflineStorageSize(size);
         setOfflineCount(count);
-        console.log('✅ Audio removed from offline storage and song list');
+        console.log('✅ Audio removed from offline storage', isOnline ? '(kept in liked songs)' : '(removed from liked songs)');
       }
     } catch (error) {
       console.error('❌ Error removing audio from offline storage:', error);
