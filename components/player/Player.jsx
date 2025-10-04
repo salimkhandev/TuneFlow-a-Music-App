@@ -16,7 +16,7 @@ import {
   setVolume,
   togglePlayPause,
 } from "@/lib/slices/playerSlice";
-import { getOfflineAudio, isAudioOffline } from "@/lib/utils";
+import { getOfflineAudio, isAudioOffline, updateOfflineSongLikedAt } from "@/lib/utils";
 import {
   Pause,
   Play,
@@ -38,6 +38,7 @@ const Player = () => {
   const { data: session } = useSession();
   const { currentSong, isPlaying, volume, progress, queue, queueIndex, isBottomPlayerVisible} =
     useSelector((state) => state.player);
+  const { netAvail: isOnline } = useSelector((state) => state.network);
   const audioRef = useRef(null);
   const animationRef = useRef(null);
   const isLoadingRef = useRef(false);
@@ -139,14 +140,24 @@ const Player = () => {
     try {
       if (isAlready) {
         await unlikeSong(currentSong.id).unwrap();
+        
+        // Update likedAt timestamp in IndexedDB for offline songs
+        if (!isOnline) {
+          await updateOfflineSongLikedAt(currentSong.id, new Date().toISOString());
+        }
       } else {
         const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
         await likeSong(songWithTimestamp).unwrap();
+        
+        // Update likedAt timestamp in IndexedDB for offline songs
+        if (!isOnline) {
+          await updateOfflineSongLikedAt(currentSong.id, songWithTimestamp.likedAt);
+        }
       }
     } catch (_) {
       // noop
     }
-  }, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong]);
+  }, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong, isOnline]);
 
   // Initialize/load audio element - ONLY when currentSong changes
   useEffect(() => {

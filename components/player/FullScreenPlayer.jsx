@@ -24,6 +24,7 @@ import {
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { updateOfflineSongLikedAt } from "@/lib/utils";
 
 const FullScreenPlayer = ({ onClose }) => {
   const dispatch = useDispatch();
@@ -35,7 +36,7 @@ const FullScreenPlayer = ({ onClose }) => {
   const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
-
+  const { netAvail: isOnline } = useSelector((state) => state.network);
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
     setIsClient(true);
@@ -124,9 +125,15 @@ const FullScreenPlayer = ({ onClose }) => {
 		try {
     if (isCurrentSongLiked) {
 				await unlikeSong(currentSong.id).unwrap();
+      if (!isOnline) {
+        await updateOfflineSongLikedAt(currentSong.id, new Date().toISOString());
+      }
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
 				await likeSong(songWithTimestamp).unwrap();
+        if (!isOnline) {
+          await updateOfflineSongLikedAt(currentSong.id, new Date().toISOString());
+        }
 			}
 		} catch (e) {
 			// no-op, network/UI will remain consistent via RTK Query

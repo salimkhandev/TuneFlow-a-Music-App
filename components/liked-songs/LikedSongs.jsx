@@ -7,7 +7,7 @@ import {
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
-import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
+import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline, updateOfflineSongLikedAt } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
@@ -157,6 +157,12 @@ const LikedSongs = () => {
     if (!isClient || !session?.user) return;
     try {
       await unlikeSong(songId).unwrap();
+      
+      // Update likedAt timestamp in IndexedDB for offline songs
+      if (!isOnline) {
+        await updateOfflineSongLikedAt(songId, new Date().toISOString());
+      }
+      
       setLikedSongs(prev => prev.filter(s => s.id !== songId));
       const isOffline = await isAudioOffline(songId);
       if (isOffline) {
@@ -177,6 +183,12 @@ const LikedSongs = () => {
     try {
       // Since we're in LikedSongs page, this should always remove the song
       await unlikeSong(song.id).unwrap();
+      
+      // Update likedAt timestamp in IndexedDB for offline songs
+      if (!isOnline) {
+        await updateOfflineSongLikedAt(song.id, new Date().toISOString());
+      }
+      
       setLikedSongs(prev => prev.filter(s => s.id !== song.id));
     } catch (error) {
       console.error('❌ Error removing song from liked songs:', error);
