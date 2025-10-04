@@ -472,7 +472,7 @@ const Player = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8"
+              className="absolute top-2 right-[40px] h-8 w-8"
                 onClick={() => dispatch(hideBottomPlayer())}
               aria-label="Close player"
             >

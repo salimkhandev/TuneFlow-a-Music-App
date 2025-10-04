@@ -10,8 +10,9 @@ import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } 
 import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import Loader from "../loader/Loader";
 import SongMenu from "../song-menu/SongMenu";
 
 const LikedSongs = () => {
@@ -30,6 +31,13 @@ const LikedSongs = () => {
   const [isStoring, setIsStoring] = useState(false);
   const [storingSongId, setStoringSongId] = useState(null);
   const [showOfflineInfo, setShowOfflineInfo] = useState(false);
+  const [isLoadingSongs, setIsLoadingSongs] = useState(true);
+  
+  // Memoize offline song IDs for performance
+  const offlineSongIds = useMemo(() => 
+    new Set(offlineAudio.map(audio => audio.songId)), 
+    [offlineAudio]
+  );
 
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
@@ -47,10 +55,12 @@ const LikedSongs = () => {
     if (!isClient || !isInitialized) return;
 
     const loadSongs = async () => {
-      if (shouldFetch) {
-        setLikedSongs(Array.isArray(likedData?.items) ? likedData.items : []);
-      } else {
-        try {
+      setIsLoadingSongs(true);
+      
+      try {
+        if (shouldFetch) {
+          setLikedSongs(Array.isArray(likedData?.items) ? likedData.items : []);
+        } else {
           const db = await initOfflineAudioDB();
           if (!db) {
             setLikedSongs([]);
@@ -73,10 +83,12 @@ const LikedSongs = () => {
           }));
 
           setLikedSongs(formattedSongs);
-        } catch (error) {
-          console.error('Failed to load offline songs:', error);
-          setLikedSongs([]);
         }
+      } catch (error) {
+        console.error('Failed to load songs:', error);
+        setLikedSongs([]);
+      } finally {
+        setIsLoadingSongs(false);
       }
     };
 
@@ -250,10 +262,56 @@ const LikedSongs = () => {
   };
 
 
-  // Show consistent loading state during hydration
-  if (!isClient) {
+  // // Show consistent loading state during hydration
+  // if (!isClient) {
+  //   return (
+  //     <div className="p-6 space-y-6">
+  //       <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
+  //         <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-2xl">
+  //           <Heart className="w-12 h-12 sm:w-20 sm:h-20 text-white" />
+  //         </div>
+  //         <div className="flex-1 space-y-4 text-center sm:text-left">
+  //           <div>
+  //             <p className="text-sm font-medium text-muted-foreground">Playlist</p>
+  //             <h1 className="text-2xl sm:text-4xl font-bold">Liked Songs</h1>
+  //           </div>
+  //           <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
+  //             <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+  //             <span>0 songs</span>
+  //           </div>
+  //         </div>
+  //       </div>
+        
+  //       {/* Action Buttons - Show but disabled */}
+  //       <div className="flex items-center justify-center sm:justify-start gap-4">
+  //         <Button 
+  //           size="lg" 
+  //           className="rounded-full bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+  //           disabled
+  //         >
+  //           <Play className="w-6 h-6 mr-2" />
+  //           Play
+  //         </Button>
+  //       </div>
+
+  //       {/* Offline Audio Storage Section - Show but empty */}
+  
+  //       {/* Empty State */}
+  //       <div className="text-center py-12">
+  //         <Heart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+  //         <h3 className="text-xl font-semibold mb-2">No liked songs yet</h3>
+  //         <p className="text-muted-foreground">
+  //           Songs you like will appear here
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // Show loader while loading songs
+  if (isLoadingSongs) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 relative">
         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
           <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-2xl">
             <Heart className="w-12 h-12 sm:w-20 sm:h-20 text-white" />
@@ -265,59 +323,12 @@ const LikedSongs = () => {
             </div>
             <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-              <span>0 songs</span>
+              <span>Loading songs...</span>
             </div>
           </div>
         </div>
-        
-        {/* Action Buttons - Show but disabled */}
-        <div className="flex items-center justify-center sm:justify-start gap-4">
-          <Button 
-            size="lg" 
-            className="rounded-full bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-            disabled
-          >
-            <Play className="w-6 h-6 mr-2" />
-            Play
-          </Button>
-        </div>
-
-        {/* Offline Audio Storage Section - Show but empty */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-blue-500" />
-              <h3 className="font-semibold">Offline Audio Storage</h3>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              0 MB used
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              className="text-red-500 hover:text-red-700"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear All Offline
-            </Button>
-          </div>
-          
-          <div className="text-sm text-muted-foreground">
-            0 audio files available offline
-          </div>
-        </div>
-
-        {/* Empty State */}
-        <div className="text-center py-12">
-          <Heart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No liked songs yet</h3>
-          <p className="text-muted-foreground">
-            Songs you like will appear here
-          </p>
+        <div className="flex items-center justify-center py-12">
+          <Loader />
         </div>
       </div>
     );
@@ -426,7 +437,7 @@ const LikedSongs = () => {
 
         {/* Songs */}
         {likedSongs.map((song, index) => {
-          const isOffline = offlineAudio.some(audio => audio.songId === song.id);
+          const isOffline = offlineSongIds.has(song.id);
           const isStoringThis = storingSongId === song.id;
           
           return (
@@ -471,9 +482,9 @@ const LikedSongs = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{song.name}</p>
                   <p className="text-sm text-muted-foreground truncate">
-                    {song.artists?.primary
-                      ?.map((artist) => decodeHtmlEntities(artist.name))
-                      .join(", ") || "Unknown Artist"}
+                    {song.artists?.primary?.length > 0 
+                      ? song.artists.primary.map(artist => decodeHtmlEntities(artist.name)).join(", ")
+                      : "Unknown Artist"}
                   </p>
                 </div>
               </div>
@@ -555,9 +566,9 @@ const LikedSongs = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{song.name}</p>
                   <p className="text-sm text-muted-foreground truncate">
-                    {song.artists?.primary
-                      ?.map((artist) => decodeHtmlEntities(artist.name))
-                      .join(", ") || "Unknown Artist"}
+                    {song.artists?.primary?.length > 0 
+                      ? song.artists.primary.map(artist => decodeHtmlEntities(artist.name)).join(", ")
+                      : "Unknown Artist"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {song.album?.name || "Unknown Album"}
@@ -615,8 +626,10 @@ const LikedSongs = () => {
         })}
       </div>
 
-      {/* Empty State (if no liked songs) */}
-      {likedSongs.length === 0 && (
+      {/* Empty State - only show when not loading and no songs from actual data source */}
+      {!isLoadingSongs && (
+        (shouldFetch ? (likedData?.items?.length === 0 || !likedData?.items) : likedSongs.length === 0)
+      ) && (
         <div className="text-center py-12">
           <Heart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold mb-2">No liked songs yet</h3>

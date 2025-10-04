@@ -1,6 +1,6 @@
 import { CustomThemeProvider } from "@/components/custom-theme-provider";
 import Header from "@/components/header/Header";
-import { NavigationLoader } from "@/components/navigation/NavigationLoader";
+// NavigationLoader removed for performance
 import { NetworkDetector } from '@/components/NetworkDetector/NetworkDetector';
 import Player from "@/components/player/Player";
 import PWAInstallButton from "@/components/pwa-install/PWAInstallButton";
@@ -51,36 +51,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
         <link rel="icon" href="/icons/favicon.ico" />
-        
-        {/* <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme') || 'system';
-                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  const resolvedTheme = theme === 'system' ? systemTheme : theme;
-                  
-                  if (resolvedTheme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.style.colorScheme = 'dark';
-                  } else {
-                    document.documentElement.classList.add('light');
-                    document.documentElement.style.colorScheme = 'light';
-                  }
-                  
-                  // Apply custom theme if available
-                  const appTheme = localStorage.getItem('app-theme') || 'default';
-                  document.documentElement.setAttribute('data-theme', appTheme);
-                } catch (e) {
-                  // Fallback to light theme if localStorage is not available
-                  document.documentElement.classList.add('light');
-                  document.documentElement.style.colorScheme = 'light';
-                }
-              })();
-            `,
-          }}
-        /> */}
+      
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -95,7 +66,7 @@ export default function RootLayout({ children }) {
           >
             <CustomThemeProvider defaultTheme="default">
 
-              <NavigationLoader />
+              {/** NavigationLoader removed for performance **/}
               {/** RoutePrefetcher removed for performance testing **/}
               <NetworkDetector />
               <div className="flex flex-col h-dvh">

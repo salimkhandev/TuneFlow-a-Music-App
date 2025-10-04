@@ -13,11 +13,7 @@ export function NavigationLoader() {
       if (isNavigatingRef.current) return; // Already navigating
       
       isNavigatingRef.current = true;
-      
-      // Use requestAnimationFrame to defer the state update to the next frame
-      requestAnimationFrame(() => {
-        setIsNavigating(true);
-      });
+      setIsNavigating(true);
       
       // Clear any existing timeout
       if (timeoutRef.current) {
@@ -26,11 +22,9 @@ export function NavigationLoader() {
     };
     
     const handleComplete = () => {
-      // Only hide loading indicator if navigation takes longer than 50ms
-      timeoutRef.current = setTimeout(() => {
-        isNavigatingRef.current = false;
-        setIsNavigating(false);
-      }, 50);
+      // Hide loading indicator immediately for fast navigation
+      isNavigatingRef.current = false;
+      setIsNavigating(false);
     };
 
     // Listen for route changes using a more compatible approach
