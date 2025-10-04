@@ -7,7 +7,7 @@ import {
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
 import { clearQueue, playSong, setProgress, showBottomPlayer, togglePlayPause } from "@/lib/slices/playerSlice";
-import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline, updateOfflineSongLikedAt } from "@/lib/utils";
+import { clearAllOfflineAudio, decodeHtmlEntities, getAllOfflineAudio, getOfflineAudioCount, getOfflineAudioSize, initOfflineAudioDB, isAudioOffline, removeAudioOffline, storeAudioOffline } from "@/lib/utils";
 import { AudioLines, CheckCircle, Clock, Download, HardDrive, Heart, Pause, Play, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
@@ -158,15 +158,13 @@ const LikedSongs = () => {
     try {
       await unlikeSong(songId).unwrap();
       
-      // Update likedAt timestamp in IndexedDB for offline songs
-      if (!isOnline) {
-        await updateOfflineSongLikedAt(songId, new Date().toISOString());
-      }
-      
+     if (!isOnline) {
       setLikedSongs(prev => prev.filter(s => s.id !== songId));
+     }
       const isOffline = await isAudioOffline(songId);
       if (isOffline) {
         await removeAudioOffline(songId);
+        console.log('🗑️ Removed offline song from IndexedDB:', songId);
         const audio = await getAllOfflineAudio();
         const size = await getOfflineAudioSize();
         const count = await getOfflineAudioCount();
@@ -184,9 +182,11 @@ const LikedSongs = () => {
       // Since we're in LikedSongs page, this should always remove the song
       await unlikeSong(song.id).unwrap();
       
-      // Update likedAt timestamp in IndexedDB for offline songs
-      if (!isOnline) {
-        await updateOfflineSongLikedAt(song.id, new Date().toISOString());
+      // Remove song from IndexedDB when unliked
+      const isOfflineSong = await isAudioOffline(song.id);
+      if (isOfflineSong) {
+        await removeAudioOffline(song.id);
+        console.log('🗑️ Removed offline song from IndexedDB:', song.id);
       }
       
       setLikedSongs(prev => prev.filter(s => s.id !== song.id));

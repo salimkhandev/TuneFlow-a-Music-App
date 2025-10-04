@@ -13,7 +13,7 @@ import {
   setProgress,
   togglePlayPause
 } from "@/lib/slices/playerSlice";
-import { updateOfflineSongLikedAt } from "@/lib/utils";
+import { isAudioOffline, removeAudioOffline, updateOfflineSongLikedAt } from "@/lib/utils";
 import {
   ArrowLeft,
   Heart,
@@ -125,15 +125,22 @@ const FullScreenPlayer = ({ onClose }) => {
 		try {
     if (isCurrentSongLiked) {
 				await unlikeSong(currentSong.id).unwrap();
-      if (!isOnline) {
-        await updateOfflineSongLikedAt(currentSong.id, new Date().toISOString());
+      
+      // Remove song from IndexedDB when unliked
+      const isOfflineSong = await isAudioOffline(currentSong.id);
+      if (isOfflineSong) {
+        await removeAudioOffline(currentSong.id);
+        console.log('🗑️ Removed offline song from IndexedDB:', currentSong.id);
       }
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
 				await likeSong(songWithTimestamp).unwrap();
-        if (!isOnline) {
-          await updateOfflineSongLikedAt(currentSong.id, songWithTimestamp.likedAt);
-        }
+      
+      // Update IndexedDB if song exists offline (regardless of current network status)
+      const isOfflineSong = await isAudioOffline(currentSong.id);
+      if (isOfflineSong) {
+        await updateOfflineSongLikedAt(currentSong.id, songWithTimestamp.likedAt);
+      }
 			}
 		} catch (e) {
 			// no-op, network/UI will remain consistent via RTK Query
