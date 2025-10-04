@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
       for (const file of FILES_TO_CACHE) {
         try {
           await cache.add(new Request(file, { cache: 'reload' }));
-          console.log('✅ Cached Successfully:', filit  -m e);
+          console.log('✅ Cached Successfully:', file);
         } catch (error) {
           console.warn('❌ Cache Failed:', file, error);
         }
