@@ -126,8 +126,8 @@ const FullScreenPlayer = ({ onClose }) => {
 				await unlikeSong(currentSong.id).unwrap();
     } else {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
-      await likeSong(songWithTimestamp).unwrap();
-    }
+				await likeSong(songWithTimestamp).unwrap();
+			}
 		} catch (e) {
 			// no-op, network/UI will remain consistent via RTK Query
 		}

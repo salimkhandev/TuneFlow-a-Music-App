@@ -29,9 +29,10 @@ import {
   removeFromSearchHistory,
 } from "@/lib/utils";
 import { debounce } from "lodash";
-import { Clock, LogOut, Music, Search, User, X } from "lucide-react";
+import { Clock, LogOut, Music, Search, User, WifiOff, X } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import AlbumsList from "../albums-list/AlbumsList";
 import { ArtistCard } from "../artist-card/ArtistCard";
 import CustomThemeSwitcher from "../CustomThemeSwitcher";
@@ -64,6 +65,9 @@ const Header = () => {
   const [playlists, setPlaylists] = useState([]);
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
+
+  // Get network status from Redux store
+  const isOnline = useSelector((state) => state.network.netAvail);
 
   // Ensure we're on the client side
   useEffect(() => {
@@ -303,7 +307,14 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>Sign in</Button>
+            isOnline ? (
+              <Button size="sm" onClick={() => signIn("google", { callbackUrl: "/" })}>Sign in</Button>
+            ) : (
+              <Button size="sm" variant="outline" disabled>
+                <WifiOff className="h-4 w-4 mr-2" />
+                Offline
+              </Button>
+            )
           )}
         </div>
 
