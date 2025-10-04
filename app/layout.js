@@ -45,11 +45,43 @@ export default function RootLayout({ children }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TuneFlow" />
+        
+        {/* Windows 11 PWA Meta Tags */}
+        <meta name="msapplication-TileColor" content="#1a1a1a" />
+        <meta name="msapplication-TileImage" content="/icons/AppImages/windows11/Square150x150Logo.scale-100.png" />
+        <meta name="msapplication-config" content="/icons/AppImages/windows11/browserconfig.xml" />
+        <meta name="msapplication-square70x70logo" content="/icons/AppImages/windows11/SmallTile.scale-100.png" />
+        <meta name="msapplication-square150x150logo" content="/icons/AppImages/windows11/Square150x150Logo.scale-100.png" />
+        <meta name="msapplication-wide310x150logo" content="/icons/AppImages/windows11/Wide310x150Logo.scale-100.png" />
+        <meta name="msapplication-square310x310logo" content="/icons/AppImages/windows11/LargeTile.scale-100.png" />
 
         {/* Icons */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+        {/* iOS Icons */}
+        <link rel="apple-touch-icon" href="/icons/AppImages/ios/180.png" />
+        <link rel="apple-touch-icon" sizes="57x57" href="/icons/AppImages/ios/57.png" />
+        <link rel="apple-touch-icon" sizes="60x60" href="/icons/AppImages/ios/60.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/icons/AppImages/ios/72.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="/icons/AppImages/ios/76.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="/icons/AppImages/ios/114.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icons/AppImages/ios/120.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icons/AppImages/ios/144.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/AppImages/ios/152.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/AppImages/ios/180.png" />
+        
+        {/* iOS Safari Pinned Tab */}
+        <link rel="mask-icon" href="/icons/AppImages/ios/180.png" color="#1a1a1a" />
+        
+        {/* Android Icons */}
+        <link rel="icon" type="image/png" sizes="48x48" href="/icons/AppImages/android/android-launchericon-48-48.png" />
+        <link rel="icon" type="image/png" sizes="72x72" href="/icons/AppImages/android/android-launchericon-72-72.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/icons/AppImages/android/android-launchericon-96-96.png" />
+        <link rel="icon" type="image/png" sizes="144x144" href="/icons/AppImages/android/android-launchericon-144-144.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/AppImages/android/android-launchericon-192-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icons/AppImages/android/android-launchericon-512-512.png" />
+        
+        {/* Standard Favicons */}
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/AppImages/ios/16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/AppImages/ios/32.png" />
         <link rel="icon" href="/icons/favicon.ico" />
       
       </head>
