@@ -13,6 +13,7 @@ import {
   setProgress,
   togglePlayPause
 } from "@/lib/slices/playerSlice";
+import { updateOfflineSongLikedAt } from "@/lib/utils";
 import {
   ArrowLeft,
   Heart,
@@ -24,7 +25,6 @@ import {
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { updateOfflineSongLikedAt } from "@/lib/utils";
 
 const FullScreenPlayer = ({ onClose }) => {
   const dispatch = useDispatch();
@@ -132,13 +132,13 @@ const FullScreenPlayer = ({ onClose }) => {
       const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
 				await likeSong(songWithTimestamp).unwrap();
         if (!isOnline) {
-          await updateOfflineSongLikedAt(currentSong.id, new Date().toISOString());
+          await updateOfflineSongLikedAt(currentSong.id, songWithTimestamp.likedAt);
         }
 			}
 		} catch (e) {
 			// no-op, network/UI will remain consistent via RTK Query
 		}
-	}, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong]);
+	}, [isClient, currentSong, session, isCurrentSongLiked, likeSong, unlikeSong, isOnline]);
 
   // Get reference to the bottom player's audio element
   const getAudioElement = () => {
