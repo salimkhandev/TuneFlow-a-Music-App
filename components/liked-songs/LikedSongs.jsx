@@ -158,10 +158,11 @@ const LikedSongs = () => {
 
   const handleToggleLike = async (song) => {
     try {
-      await likeSong(song).unwrap();
-      setLikedSongs(prev => [song, ...prev.filter(s => s.id !== song.id)]);
+      // Since we're in LikedSongs page, this should always remove the song
+      await unlikeSong(song.id).unwrap();
+      setLikedSongs(prev => prev.filter(s => s.id !== song.id));
     } catch (error) {
-      console.error('❌ Error liking song:', error);
+      console.error('❌ Error removing song from liked songs:', error);
     }
   };
 
@@ -517,6 +518,7 @@ const LikedSongs = () => {
                   onToggleLike={handleToggleLike}
                   onDownload={handleDownload}
                   onStoreOffline={handleStoreAudioOffline}
+                  onRemoveOffline={handleRemoveAudioOffline}
                   isOffline={isOffline}
                   isStoring={isStoringThis}
                 />
@@ -600,6 +602,7 @@ const LikedSongs = () => {
                     onToggleLike={handleToggleLike}
                     onDownload={handleDownload}
                     onStoreOffline={handleStoreAudioOffline}
+                    onRemoveOffline={handleRemoveAudioOffline}
                     isOffline={isOffline}
                     isStoring={isStoringThis}
                     className="opacity-100"

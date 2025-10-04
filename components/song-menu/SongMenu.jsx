@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle, Download, HardDrive, Heart, MoreHorizontal } from "lucide-react";
+import { Download, HardDrive, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,6 +17,7 @@ const SongMenu = ({
   onToggleLike, 
   onDownload,
   onStoreOffline,
+  onRemoveOffline,
   isOffline = false,
   isStoring = false,
   className = "" 
@@ -48,6 +49,12 @@ const SongMenu = ({
   const handleStoreOffline = (e) => {
     e.stopPropagation();
     onStoreOffline?.(song);
+    setIsOpen(false);
+  };
+
+  const handleRemoveOffline = (e) => {
+    e.stopPropagation();
+    onRemoveOffline?.(song.id);
     setIsOpen(false);
   };
 
@@ -136,7 +143,7 @@ const SongMenu = ({
               onClick={handleToggleLike}
             >
               <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-              <span>{isLiked ? 'Remove from Liked' : 'Add to Liked'}</span>
+              <span>{isLiked ? 'Unlike' : 'Like'}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
@@ -145,7 +152,7 @@ const SongMenu = ({
               <Download className="mr-2 h-4 w-4" />
               <span>Download</span>
             </DropdownMenuItem>
-            {song?.downloadUrl && (
+            {song?.downloadUrl && !isOffline && (
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={handleStoreOffline}
@@ -153,14 +160,21 @@ const SongMenu = ({
               >
                 {isStoring ? (
                   <div className="mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                ) : isOffline ? (
-                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                 ) : (
                   <HardDrive className="mr-2 h-4 w-4" />
                 )}
                 <span>
-                  {isStoring ? 'Storing...' : isOffline ? 'Available Offline' : 'Store Offline'}
+                  {isStoring ? 'Storing...' : 'Store Offline'}
                 </span>
+              </DropdownMenuItem>
+            )}
+            {isOffline && (
+              <DropdownMenuItem
+                className="cursor-pointer text-red-500 hover:text-red-700"
+                onClick={handleRemoveOffline}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete Offline</span>
               </DropdownMenuItem>
             )}
           </>
