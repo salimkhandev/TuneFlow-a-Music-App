@@ -76,7 +76,12 @@ const LikedSongs = () => {
             request.onerror = () => reject(request.error);
           });
 
-          const formattedSongs = offlineSongs.map(song => ({
+          // Sort offline songs by likedAt (most recently liked first) to match online ordering
+          const sortedOfflineSongs = offlineSongs.sort((a, b) => 
+            new Date(b.likedAt || b.storedAt) - new Date(a.likedAt || a.storedAt)
+          );
+
+          const formattedSongs = sortedOfflineSongs.map(song => ({
             ...song,
             id: song.songId,
             downloadUrl: song.downloadUrl || [{ url: '', quality: 'offline' }]
