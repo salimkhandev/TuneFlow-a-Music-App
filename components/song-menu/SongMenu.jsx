@@ -10,6 +10,7 @@ import {
 import { Download, HardDrive, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 
 const SongMenu = ({ 
   song, 
@@ -28,6 +29,7 @@ const SongMenu = ({
   const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
   const [didMove, setDidMove] = useState(false);
   const dropdownRef = useRef(null);
+  const isOnline = useSelector((state) => state.network.netAvail);
 
   const handleToggleLike = (e) => {
     e.stopPropagation();
@@ -168,17 +170,18 @@ const SongMenu = ({
                 </span>
               </DropdownMenuItem>
             )}
-            {isOffline && (
-              <DropdownMenuItem
-                className="cursor-pointer text-red-500 hover:text-red-700"
-                onClick={handleRemoveOffline}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
+              {isOffline && (
+                <DropdownMenuItem
+                  className="cursor-pointer text-red-500 hover:text-red-700"
+                  onClick={handleRemoveOffline}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
                   <span>Delete Offline</span>
-              </DropdownMenuItem>
-            )}
+                </DropdownMenuItem>
+              )}
+          
           </>
-        ) : (
+        )  : isOnline ? (
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => window.location.href = "/login"}
@@ -186,7 +189,15 @@ const SongMenu = ({
             <Heart className="mr-2 h-4 w-4" />
             <span>Sign in to like songs</span>
           </DropdownMenuItem>
-        )}
+          ) :(
+            <DropdownMenuItem
+              className="cursor-pointer text-red-500 hover:text-red-700"
+              onClick={handleRemoveOffline}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete Offline</span>
+            </DropdownMenuItem>
+          )}
       </DropdownMenuContent>
       </div>
     </DropdownMenu>
