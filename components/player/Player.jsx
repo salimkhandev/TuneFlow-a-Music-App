@@ -16,7 +16,7 @@ import {
   setVolume,
   togglePlayPause,
 } from "@/lib/slices/playerSlice";
-import { getOfflineAudio, isAudioOffline, updateOfflineSongLikedAt } from "@/lib/utils";
+import { getOfflineAudio, isAudioOffline, removeAudioOffline } from "@/lib/utils";
 import {
   Pause,
   Play,
@@ -146,16 +146,17 @@ const Player = () => {
         if (isOfflineSong) {
           await removeAudioOffline(currentSong.id);
           console.log('🗑️ Removed offline song from IndexedDB:', currentSong.id);
+          
+          // Dispatch custom event to notify other components
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('offlineSongDeleted', { 
+              detail: { songId: currentSong.id } 
+            }));
+          }
         }
       } else {
         const songWithTimestamp = { ...currentSong, likedAt: new Date().toISOString() };
         await likeSong(songWithTimestamp).unwrap();
-        
-        // Update IndexedDB if song exists offline (regardless of current network status)
-        const isOfflineSong = await isAudioOffline(currentSong.id);
-        if (isOfflineSong) {
-          await updateOfflineSongLikedAt(currentSong.id, songWithTimestamp.likedAt);
-        }
       }
     } catch (_) {
       // noop

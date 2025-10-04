@@ -158,9 +158,7 @@ const LikedSongs = () => {
     try {
       await unlikeSong(songId).unwrap();
       
-     if (!isOnline) {
       setLikedSongs(prev => prev.filter(s => s.id !== songId));
-     }
       const isOffline = await isAudioOffline(songId);
       if (isOffline) {
         await removeAudioOffline(songId);
