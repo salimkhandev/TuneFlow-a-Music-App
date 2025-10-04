@@ -570,6 +570,7 @@ const LikedSongs = () => {
                   onRemoveOffline={handleRemoveAudioOffline}
                   isOffline={isOffline}
                   isStoring={isStoringThis}
+                  showOfflineOptions={true}
                 />
               </div>
             </div>
@@ -654,6 +655,7 @@ const LikedSongs = () => {
                     onRemoveOffline={handleRemoveAudioOffline}
                     isOffline={isOffline}
                     isStoring={isStoringThis}
+                    showOfflineOptions={true}
                     className="opacity-100"
                   />
                 </div>

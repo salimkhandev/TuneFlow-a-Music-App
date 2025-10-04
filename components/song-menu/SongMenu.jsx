@@ -21,6 +21,7 @@ const SongMenu = ({
   onRemoveOffline,
   isOffline = false,
   isStoring = false,
+  showOfflineOptions = false,
   className = "" 
 }) => {
   const { data: session } = useSession();
@@ -154,7 +155,7 @@ const SongMenu = ({
               <Download className="mr-2 h-4 w-4" />
               <span>Download</span>
             </DropdownMenuItem>
-            {song?.downloadUrl && !isOffline && (
+            {showOfflineOptions && song?.downloadUrl && !isOffline && (
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={handleStoreOffline}
@@ -170,15 +171,15 @@ const SongMenu = ({
                 </span>
               </DropdownMenuItem>
             )}
-              {isOffline && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-red-500 hover:text-red-700"
-                  onClick={handleRemoveOffline}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Delete Offline</span>
-                </DropdownMenuItem>
-              )}
+            {showOfflineOptions && isOffline && (
+              <DropdownMenuItem
+                className="cursor-pointer text-red-500 hover:text-red-700"
+                onClick={handleRemoveOffline}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete Offline</span>
+              </DropdownMenuItem>
+            )}
           
           </>
         )  : isOnline ? (
@@ -189,14 +190,16 @@ const SongMenu = ({
             <Heart className="mr-2 h-4 w-4" />
             <span>Sign in to like songs</span>
           </DropdownMenuItem>
-          ) :(
-            <DropdownMenuItem
-              className="cursor-pointer text-red-500 hover:text-red-700"
-              onClick={handleRemoveOffline}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete Offline</span>
-            </DropdownMenuItem>
+          ) : (
+            showOfflineOptions && isOffline && (
+              <DropdownMenuItem
+                className="cursor-pointer text-red-500 hover:text-red-700"
+                onClick={handleRemoveOffline}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete Offline</span>
+              </DropdownMenuItem>
+            )
           )}
       </DropdownMenuContent>
       </div>

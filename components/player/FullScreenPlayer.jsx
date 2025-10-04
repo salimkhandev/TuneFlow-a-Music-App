@@ -7,6 +7,7 @@ import {
   useLikeSongMutation,
   useUnlikeSongMutation,
 } from "@/lib/api/likedSongsApi";
+import { useOffline } from "@/lib/hooks/useOffline";
 import {
   nextSong,
   previousSong,
@@ -37,6 +38,9 @@ const FullScreenPlayer = ({ onClose }) => {
   const [isHydrated, setIsHydrated] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const { netAvail: isOnline } = useSelector((state) => state.network);
+  
+  // Get offline actions from Redux
+  const { updateOfflineData } = useOffline();
   // Ensure we're on the client side before accessing localStorage
   useEffect(() => {
     setIsClient(true);
