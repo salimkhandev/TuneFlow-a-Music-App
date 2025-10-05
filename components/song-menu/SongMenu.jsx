@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 const SongMenu = ({ 
@@ -28,6 +28,15 @@ const SongMenu = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const dropdownRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+      setIsTouchDevice(Boolean(hasTouch));
+    }
+  }, []);
   const isOnline = useSelector((state) => state.network.netAvail);
 
   const handleToggleLike = (e) => {
@@ -63,9 +72,27 @@ const SongMenu = ({
 
   const handleClick = (e) => {
     e.stopPropagation();
-    // Ignore if finger moved (scroll) or touch was too short
-    setIsOpen(true); // 👈 toggles between true and false
+    if (isTouchDevice) {
+      // On touch devices, only long-press opens (handled via touch events)
+      return;
+    }
+    setIsOpen((prev) => !prev);
   };  
+
+  const handleTouchStart = (e) => {
+    e.stopPropagation();
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => setIsOpen(true), 400);
+  };
+
+  const handleTouchEnd = (e) => {
+    e.stopPropagation();
+    clearTimeout(longPressTimerRef.current);
+  };
+
+  const handleTouchCancel = () => {
+    clearTimeout(longPressTimerRef.current);
+  };
 
 
   return (
@@ -82,6 +109,9 @@ const SongMenu = ({
           aria-haspopup="menu"
           aria-expanded={isOpen}
           style={{ touchAction: 'manipulation' }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
