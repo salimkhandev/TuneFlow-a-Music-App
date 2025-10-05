@@ -87,14 +87,14 @@ const FullScreenPlayer = ({ onClose }) => {
 	const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
 	
 	// Fast like status check for current song
-  const { data: likeStatus, isFetching: isLikeStatusFetching } = useGetSongLikeStatusQuery(currentSong?.id, { 
+  const { data: likeStatus } = useGetSongLikeStatusQuery(currentSong?.id, { 
     skip: !shouldFetchLiked || !currentSong?.id 
   });
 	const isCurrentSongLiked = likeStatus?.isLiked ?? false;
 	
   const [likeSong, { isLoading: isLiking }] = useLikeSongMutation();
   const [unlikeSong, { isLoading: isUnliking }] = useUnlikeSongMutation();
-  const isLikeActionLoading = isLiking || isUnliking || isLikeStatusFetching;
+  const isLikeActionLoading = isLiking || isUnliking;
 
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = () => {

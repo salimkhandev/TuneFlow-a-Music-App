@@ -226,29 +226,33 @@ const Header = () => {
       </div>
 
       {/* Middle: Search Bar (Hidden on Small Screens) */}
-      <div className="hidden sm:flex items-center gap-4 flex-1 max-w-md mx-4">
-        <Button
-          variant="secondary"
-          className="relative w-full flex justify-start items-center"
-          onClick={() => setIsOpenSearchDialog(true)}
-        >
-          <Search className="text-muted-foreground" />
-          <p className="text-muted-foreground font-normal">
-            Search songs, artists, or playlists...
-          </p>
-        </Button>
-      </div>
+      {isOnline && (
+        <div className="hidden sm:flex items-center gap-4 flex-1 max-w-md mx-4">
+          <Button
+            variant="secondary"
+            className="relative w-full flex justify-start items-center"
+            onClick={() => setIsOpenSearchDialog(true)}
+          >
+            <Search className="text-muted-foreground" />
+            <p className="text-muted-foreground font-normal">
+              Search songs, artists, or playlists...
+            </p>
+          </Button>
+        </div>
+      )}
 
       {/* Right Side: Mode Toggle & Mobile Search Button */}
           {/* Mobile Search Icon */}
-          <Button
-            size="icon"
-            variant="outline"
-            className="sm:hidden"
-            onClick={() => setIsOpenSearchDialog(true)}
-          >
-            <Search className="h-5 w-5 text-muted-foreground" />
-          </Button>
+          {isOnline && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="sm:hidden"
+              onClick={() => setIsOpenSearchDialog(true)}
+            >
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          )}
       <div className="flex items-center gap-3 ml-auto">
 
           {/* Mode Toggle - Hidden on Mobile, Visible on Desktop */}
