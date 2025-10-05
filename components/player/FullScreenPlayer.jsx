@@ -87,13 +87,14 @@ const FullScreenPlayer = ({ onClose }) => {
 	const likedSongs = Array.isArray(likedData?.items) ? likedData.items : [];
 	
 	// Fast like status check for current song
-	const { data: likeStatus } = useGetSongLikeStatusQuery(currentSong?.id, { 
-		skip: !shouldFetchLiked || !currentSong?.id 
-	});
+  const { data: likeStatus, isFetching: isLikeStatusFetching } = useGetSongLikeStatusQuery(currentSong?.id, { 
+    skip: !shouldFetchLiked || !currentSong?.id 
+  });
 	const isCurrentSongLiked = likeStatus?.isLiked ?? false;
 	
-	const [likeSong] = useLikeSongMutation();
-	const [unlikeSong] = useUnlikeSongMutation();
+  const [likeSong, { isLoading: isLiking }] = useLikeSongMutation();
+  const [unlikeSong, { isLoading: isUnliking }] = useUnlikeSongMutation();
+  const isLikeActionLoading = isLiking || isUnliking || isLikeStatusFetching;
 
   // Build current audio URL and download via API proxy to force attachment
   const getCurrentAudioUrl = () => {
@@ -324,17 +325,22 @@ const FullScreenPlayer = ({ onClose }) => {
         </div>
 
    {isOnline && (
-     <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3 flex-shrink-0">
           <Button
-            variant="ghost"
+              variant="unstyled"
+
             size="icon"
             onClick={handleToggleLike}
-          className="text-red-500 bg-transparent active:bg-transparent focus:bg-transparent md:hover:text-red-600 md:hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
+            disabled={isLikeActionLoading}
+              className="text-red-500 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent md:hover:text-red-500 md:hover:bg-transparent h-7 w-7 sm:h-8 sm:w-8 touch-manipulation"
           >
-            <Heart
-              className={`w-3 h-3 sm:w-4 sm:h-4 ${isCurrentSongLiked ? 'fill-red-500' : ''
-                }`}
-            />
+            {isLikeActionLoading ? (
+              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Heart
+                className={`w-3 h-3 sm:w-4 sm:h-4 ${isCurrentSongLiked ? 'fill-red-500' : ''}`}
+              />
+            )}
           </Button>
         </div>
         )}

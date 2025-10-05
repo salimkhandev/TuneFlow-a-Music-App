@@ -64,7 +64,7 @@ const SongMenu = ({
   const handleClick = (e) => {
     e.stopPropagation();
     // Ignore if finger moved (scroll) or touch was too short
-      setIsOpen(true);
+    setIsOpen(true); // 👈 toggles between true and false
   };  
 
 
@@ -73,10 +73,14 @@ const SongMenu = ({
       <div ref={dropdownRef}>
         <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
+            variant="unstyled"
           size="icon"
-          className={`h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ${className}`}
+            className={`h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent focus:outline-none active:bg-transparent ${className}`}
           onClick={handleClick}
+          type="button"
+          aria-pressed={isOpen}
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
           style={{ touchAction: 'manipulation' }}
         >
           <MoreHorizontal className="h-4 w-4" />
