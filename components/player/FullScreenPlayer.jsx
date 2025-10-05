@@ -323,8 +323,8 @@ const FullScreenPlayer = ({ onClose }) => {
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3 flex-shrink-0">
+   {isOnline && (
+     <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-3 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -337,6 +337,7 @@ const FullScreenPlayer = ({ onClose }) => {
             />
           </Button>
         </div>
+        )}
         
         <div className="w-full max-w-xs sm:max-w-md mb-2 sm:mb-3 px-4 flex-shrink-0">
           <Slider

@@ -130,6 +130,15 @@ const LikedSongs = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  const formatStorageSize = (sizeMb) => {
+    if (typeof sizeMb !== 'number' || isNaN(sizeMb)) return '0 MB';
+    if (sizeMb >= 1024) {
+      const sizeGb = Math.round((sizeMb / 1024) * 100) / 100;
+      return `${sizeGb} GB`;
+    }
+    return `${sizeMb} MB`;
+  };
+
   const handlePlayPause = (song, index) => {
     if (currentSong?.id === song.id) {
       dispatch(togglePlayPause());
@@ -427,7 +436,7 @@ const LikedSongs = () => {
           </div>
           <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
             <span>Storage used</span>
-            <span>{offlineStorageSize} MB</span>
+            <span>{formatStorageSize(offlineStorageSize)}</span>
           </div>
           <div className="text-sm text-muted-foreground mb-4">
             {offlineCount} audio files available offline
