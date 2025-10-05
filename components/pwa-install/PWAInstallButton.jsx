@@ -72,12 +72,12 @@ const InstallPWAButton = () => {
             {deferredPrompt ? (
                 <button
                     onClick={handleInstall}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:opacity-90 transition-colors"
                 >
                     Install App
                 </button>
             ) : isIOS ? (
-                <div className="p-3 bg-gray-100 rounded-md shadow-md max-w-xs text-sm text-gray-800">
+                <div className="p-3 bg-card rounded-md shadow-md max-w-xs text-sm text-foreground">
                     To install this app on iOS: Tap <span className="font-bold">Share</span> → <span className="font-bold">Add to Home Screen</span>
                 </div>
             ) : null}

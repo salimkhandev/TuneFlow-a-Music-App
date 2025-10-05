@@ -352,23 +352,23 @@ const Header = () => {
             
             {/* Search Suggestions Dropdown */}
             {showSuggestions && searchSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto mt-1">
-                <div className="p-2 text-xs text-gray-500 dark:text-gray-400 border-b">
+              <div className="absolute top-full left-0 right-0 bg-popover text-popover-foreground border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto mt-1">
+                <div className="p-2 text-xs text-muted-foreground border-b">
                   Recent Searches
                 </div>
                 {searchSuggestions.map((suggestion, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                    className="flex items-center justify-between px-3 py-2 hover:bg-muted cursor-pointer"
                     onClick={() => handleSuggestionClick(suggestion)}
                   >
                     <span className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       {suggestion}
                     </span>
                     <button
                       onClick={(e) => handleRemoveSuggestion(suggestion, e)}
-                      className="text-gray-400 hover:text-red-500"
+                      className="text-muted-foreground hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -380,7 +380,7 @@ const Header = () => {
                       clearSearchHistory();
                       setSearchSuggestions([]);
                     }}
-                    className="text-xs text-red-500 hover:text-red-700"
+                    className="text-xs text-destructive hover:opacity-90"
                   >
                     Clear History
                   </button>

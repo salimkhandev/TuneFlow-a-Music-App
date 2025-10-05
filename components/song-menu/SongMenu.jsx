@@ -93,7 +93,7 @@ const SongMenu = ({
               className="cursor-pointer"
               onClick={handleToggleLike}
             >
-              <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-destructive text-destructive' : ''}`} />
               <span>{isLiked ? 'Unlike' : 'Like'}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -121,7 +121,7 @@ const SongMenu = ({
             )} */}
             {showOfflineOptions && isOffline && (
               <DropdownMenuItem
-                className="cursor-pointer text-red-500 hover:text-red-700"
+                className="cursor-pointer text-destructive hover:opacity-90"
                 onClick={handleRemoveOffline}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -141,7 +141,7 @@ const SongMenu = ({
           ) : (
             showOfflineOptions && isOffline && (
               <DropdownMenuItem
-                className="cursor-pointer text-red-500 hover:text-red-700"
+                className="cursor-pointer text-destructive hover:opacity-90"
                 onClick={handleRemoveOffline}
               >
                 <Trash2 className="mr-2 h-4 w-4" />

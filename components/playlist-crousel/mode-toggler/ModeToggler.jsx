@@ -1,23 +1,21 @@
 "use client";
 
-import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   return (
     <div>
       <Button
         variant="outline"
-        className="flex items-center gap-2   px-3"
+        className="flex items-center gap-2 px-3"
         onClick={() => {
-          setTheme((prevTheme) =>
-            prevTheme === "light" ? "dark" : "light"
-          );
+          const next = (resolvedTheme || theme) === "light" ? "dark" : "light";
+          setTheme(next);
         }}
       >
         {/* Sun icon (visible in light mode) */}

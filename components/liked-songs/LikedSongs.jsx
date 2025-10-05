@@ -133,10 +133,12 @@ const LikedSongs = () => {
   const formatStorageSize = (sizeMb) => {
     if (typeof sizeMb !== 'number' || isNaN(sizeMb)) return '0 MB';
     if (sizeMb >= 1024) {
-      const sizeGb = Math.round((sizeMb / 1024) * 100) / 100;
-      return `${sizeGb} GB`;
+      const sizeGb = sizeMb / 1024;
+      // Show one decimal place for GB (e.g., 1.2 GB)
+      return `${sizeGb.toFixed(1)} GB`;
     }
-    return `${sizeMb} MB`;
+    // For MB, show without decimals for clean look
+    return `${Math.round(sizeMb)} MB`;
   };
 
   const handlePlayPause = (song, index) => {
@@ -360,7 +362,7 @@ const LikedSongs = () => {
     return (
       <div className="p-6 space-y-6 relative">
         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
-          <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-2xl">
+          <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-2xl">
             <Heart className="w-12 h-12 sm:w-20 sm:h-20 text-white" />
           </div>
           <div className="flex-1 space-y-4 text-center sm:text-left">
@@ -369,7 +371,7 @@ const LikedSongs = () => {
               <h1 className="text-2xl sm:text-4xl font-bold">Liked Songs</h1>
             </div>
             <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
-              <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+              <Heart className="w-4 h-4 fill-destructive text-destructive" />
               <span>Loading songs...</span>
             </div>
           </div>
@@ -385,7 +387,7 @@ const LikedSongs = () => {
     <div className="p-6 space-y-6 relative">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
-        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-2xl">
+        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-2xl">
           <Heart className="w-12 h-12 sm:w-20 sm:h-20 text-white" />
         </div>
         
@@ -396,7 +398,7 @@ const LikedSongs = () => {
           </div>
           
           <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
-            <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+            <Heart className="w-4 h-4 fill-destructive text-destructive" />
             <span>{likedSongs.length} songs</span>
           </div>
         </div>
@@ -418,10 +420,14 @@ const LikedSongs = () => {
       </div>
 
       {showOfflineInfo && (
-        <div className="absolute right-2 md:right-6 top-12 md:top-16 w-64 sm:w-72 md:w-80 max-w-[85vw] bg-background/95 backdrop-blur border rounded-lg p-4 shadow-xl z-20">
+        <div
+          className="fixed inset-x-3 bottom-3 md:inset-auto md:absolute md:right-6 md:top-16 md:bottom-auto md:w-80 bg-background/95 backdrop-blur border rounded-xl p-4 shadow-2xl z-50 max-w-[100vw]"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-blue-500" />
+              <HardDrive className="w-5 h-5 text-primary" />
               <h3 className="font-semibold">Offline Audio Storage</h3>
             </div>
             <Button
@@ -434,12 +440,14 @@ const LikedSongs = () => {
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-            <span>Storage used</span>
-            <span>{formatStorageSize(offlineStorageSize)}</span>
-          </div>
-          <div className="text-sm text-muted-foreground mb-4">
-            {offlineCount} audio files available offline
+          <div className="grid grid-cols-1 gap-2 md:gap-3 mb-3">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Storage used</span>
+              <span className="font-medium text-foreground">{formatStorageSize(offlineStorageSize)}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {offlineCount} audio files available offline
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -447,7 +455,7 @@ const LikedSongs = () => {
               size="sm"
               onClick={() => handleClearAllOffline()}
               disabled={offlineCount === 0}
-              className="text-red-500 hover:text-red-700"
+              className="text-destructive hover:opacity-90 w-full md:w-auto justify-center"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Clear All Offline
@@ -549,11 +557,11 @@ const LikedSongs = () => {
                 
                 {/* Offline indicators */}
                 <div className="flex items-center gap-1">
-                  {isOffline && (
-                    <CheckCircle className="w-4 h-4 text-green-500" title="Available offline" />
+                {isOffline && (
+                    <CheckCircle className="w-4 h-4 text-primary" title="Available offline" />
                   )}
                   {isStoringThis && (
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   )}
                   {!isOffline && !isStoringThis && song.downloadUrl && (
                     <Button
@@ -563,7 +571,7 @@ const LikedSongs = () => {
                         e.stopPropagation();
                         handleStoreAudioOffline(song);
                       }}
-                      className="text-blue-500 hover:text-blue-700 p-1 h-6 w-6"
+                      className="text-primary hover:opacity-90 p-1 h-6 w-6"
                     >
                       <Download className="w-3 h-3" />
                     </Button>
@@ -635,10 +643,10 @@ const LikedSongs = () => {
                   {/* Offline indicators for mobile */}
                   <div className="flex items-center gap-1">
                     {isOffline && (
-                      <CheckCircle className="w-4 h-4 text-green-500" title="Available offline" />
+                      <CheckCircle className="w-4 h-4 text-primary" title="Available offline" />
                     )}
                     {isStoringThis && (
-                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     )}
                     {!isOffline && !isStoringThis && song.downloadUrl && (
                       <Button
@@ -648,7 +656,7 @@ const LikedSongs = () => {
                           e.stopPropagation();
                           handleStoreAudioOffline(song);
                         }}
-                        className="text-blue-500 hover:text-blue-700 p-1 h-6 w-6"
+                        className="text-primary hover:opacity-90 p-1 h-6 w-6"
                       >
                         <Download className="w-3 h-3" />
                       </Button>
