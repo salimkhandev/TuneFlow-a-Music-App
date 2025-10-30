@@ -277,6 +277,18 @@ const FullScreenPlayer = ({ onClose }) => {
   return (
     
     <div className="absolute inset-0 bg-background z-50 flex flex-col overflow-hidden">
+      {/* Blurred background using current song image */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <img
+          src={
+            (currentSong?.image && currentSong.image[currentSong.image.length - 1]?.url) ||
+            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDMyMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjAgMjQwQzIwNS40NjQgMjQwIDI0MCAyMDUuNDY0IDI0MCAxNjBDMjQwIDExNC41MzYgMjA1LjQ2NCA4MCAxNjAgODBDMTE0LjUzNiA4MCA4MCAxMTQuNTM2IDgwIDE2MEM4MCAyMDUuNDY0IDExNC41MzYgMjQwIDE2MCAyNDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMzYgMTI4TDEzNiAxOTJMMTYwIDE3NkwxODQgMTkyTDE4NCAxMjhMMTM2IDEyOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"
+          }
+          alt="Background"
+          className="w-full h-full object-cover object-center blur-2xl scale-110"
+        />
+        <div className="absolute inset-0 bg-background/70" />
+      </div>
       {/* No separate audio element - uses the bottom player's audio */}
       
       {/* Header */}

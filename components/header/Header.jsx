@@ -104,7 +104,16 @@ const Header = () => {
           query: searchQuery,
           limit,
         });
-        setArtists(artistsResponse?.data?.results || []);
+        const allArtists = artistsResponse?.data?.results || [];
+        // Filter out artists without a usable profile image (avoid placeholders)
+        const filteredArtists = allArtists.filter((a) => {
+          const images = a?.image;
+          const url = Array.isArray(images) && images.length > 0 ? images[images.length - 1]?.url : undefined;
+          if (!url || typeof url !== "string") return false;
+          const lowered = url.toLowerCase();
+          return !lowered.includes("placeholder") && !lowered.includes("default");
+        });
+        setArtists(filteredArtists);
       } catch (error) {
         console.error("Error fetching artists:", error);
         setArtists([]);
