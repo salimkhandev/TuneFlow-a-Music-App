@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## TuneFlow — A Modern Music App
+
+TuneFlow is a modern, responsive music web app built with Next.js. It features fast search, playlists, theming, a mobile-friendly player, and offline-friendly PWA capabilities. The app leverages a clean UI with Radix UI components and Tailwind CSS, global state via Redux Toolkit, and optional auth with NextAuth.
+
+### Key Features
+- Fast music search and browsing
+- Playlists and queue management
+- Modern audio player with seek/volume/loop/shuffle
+- Dark/light theme with system preference support
+- Installable PWA with offline caching for core assets
+- Responsive design across desktop and mobile
+
+### Tech Stack
+- Framework: Next.js 15, React 18
+- Styling: Tailwind CSS, tailwind-merge, tailwindcss-animate
+- UI: Radix UI primitives, lucide-react icons, vaul
+- State: Redux Toolkit, React Redux
+- Data/HTTP: axios, idb (IndexedDB helpers), lodash
+- Auth: NextAuth (optional)
+- PWA: next-pwa
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+ and npm (or yarn/pnpm/bun)
 
+### Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Development
+Start the dev server with Turbopack:
+```bash
+npm run dev
+```
+Then open `http://localhost:3000` in your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Production build
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Linting
+```bash
+npm run lint
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Environment variables
+If authentication or external services are enabled, create a `.env.local` in the project root (values depend on your setup):
+```
+# NEXTAUTH_URL=...
+# NEXTAUTH_SECRET=...
+# DATABASE_URL=...
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### External API configuration
+If you use external music APIs, you may keep configuration or endpoints in `jiosaavn-api.json`. Update it to match your environment or proxy setup.
 
-## Deployed on Vercel
+> Note: Utility helpers live in `lib/utils.js`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Scripts
+Available scripts from `package.json`:
+- `dev`: Next.js dev server with Turbopack
+- `build`: Production build
+- `start`: Start production server
+- `lint`: Run ESLint
+
+---
+
+## Project Structure (high-level)
+- `app/` — App Router pages and layouts
+- `components/` — Reusable UI components
+- `lib/` — Utilities (see `lib/utils.js`)
+- `public/` — Static assets
+- `styles/` — Global styles (if present)
+
+Folder names may vary slightly depending on ongoing development.
+
+---
+
+## PWA
+The app is configured with `next-pwa` to enable installability and offline caching for core assets. When running in production (`npm run build && npm start`), open the app and use your browser’s install prompt to add it.
+
+---
+
+## Contributing
+1. Create a new branch from `main`
+2. Make your changes with clear commit messages
+3. Ensure `npm run lint` passes
+4. Open a Pull Request with a concise description
+
+---
+
+## License
+This project is provided as-is for educational and personal use. See repository for details.
