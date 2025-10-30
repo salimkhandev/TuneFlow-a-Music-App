@@ -2,8 +2,9 @@
 
 TuneFlow is a modern, responsive music web app built with Next.js. It features fast search, playlists, theming, a mobile-friendly player, and offline-friendly PWA capabilities. The app leverages a clean UI with Radix UI components and Tailwind CSS, global state via Redux Toolkit, and optional auth with NextAuth.
 
-### Watch your favourite song even offline 
-Key Features
+### Watch your favourite song even offline
+
+### Key Features
 
 - Fast music search and browsing
 - Playlists and queue management
