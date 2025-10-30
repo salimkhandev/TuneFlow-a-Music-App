@@ -1,7 +1,6 @@
 "use client";
 import AlbumsList from "@/components/albums-list/AlbumsList";
 import Loader from "@/components/loader/Loader";
-import { PlaylistCard } from "@/components/playlist-card/PlaylistCard";
 import { Button } from "@/components/ui/button";
 import { fetchAlbums } from "@/lib/utils";
 import React, { useEffect, useState } from "react";

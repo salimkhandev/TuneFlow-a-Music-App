@@ -1,7 +1,6 @@
 "use client";
 import { ArtistCard } from "@/components/artist-card/ArtistCard";
 import Loader from "@/components/loader/Loader";
-import { PlaylistCard } from "@/components/playlist-card/PlaylistCard";
 import { SongList } from "@/components/song-list/SongList";
 import { Button } from "@/components/ui/button";
 import { fetchArtists } from "@/lib/utils";

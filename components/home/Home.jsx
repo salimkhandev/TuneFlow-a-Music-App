@@ -7,7 +7,6 @@ import {
 import {
   fetchAlbums,
   fetchArtists,
-  fetchPlaylists,
   fetchSongs,
 } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
@@ -23,11 +22,6 @@ const SongList = lazy(() =>
     default: module.SongList,
   }))
 );
-const PlaylistCrousel = lazy(() =>
-  import("../playlist-crousel/PlaylistCrousel").then((module) => ({
-    default: module.default || module.PlaylistCrousel,
-  }))
-);
 const ArtistsCrousel = lazy(() =>
   import("../artists-crousel/ArtistsCrousel").then((module) => ({
     default: module.default || module.ArtistsCrousel,
@@ -41,11 +35,9 @@ const AlbumsList = lazy(() =>
 
 const HomePage = () => {
   const { data: session } = useSession();
-  const [playlists, setPlaylists] = useState([]);
   const [artists, setArtists] = useState([]);
   const [songs, setSongs] = useState([]);
   const [albums, setAlbums] = useState([]);
-  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
   const [isLoadingArtists, setIsLoadingArtists] = useState(false);
   const [isLoadingSongs, setIsLoadingSongs] = useState(false);
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
@@ -55,14 +47,6 @@ const HomePage = () => {
   const [ likeSong ] = useLikeSongMutation();
   const [ unlikeSong ] = useUnlikeSongMutation();
   const [isClient, setIsClient] = useState(false);
-
-  const handleFetchPlaylists = async ({ query, limit }) => {
-    setIsLoadingPlaylists(true);
-    const playlists = await fetchPlaylists({ query, limit });
-    console.log(playlists);
-    setPlaylists(playlists?.data?.results);
-    setIsLoadingPlaylists(false);
-  };
 
   const handleFetchArtists = async ({ query, limit }) => {
     setIsLoadingArtists(true);
@@ -90,7 +74,6 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    handleFetchPlaylists({ query: "2024", limit: 15 });
     handleFetchArtists({ query: "a", limit: 15 });
     handleFetchSongs({ query: "a", limit: 6 });
     handleFetchAlbums({ query: "a", limit: 16 });
@@ -143,26 +126,6 @@ const HomePage = () => {
             className="w-fit border border-border group transition-all"
           >
             Explore Songs{" "}
-            <ArrowRight className="group-hover:translate-x-1 transition-all" />
-          </Button>
-        </Link>
-      </div>
-
-      <h1 className="text-2xl font-bold">Featured Playlists</h1>
-      <Suspense fallback={<Loader />}>
-        {isLoadingPlaylists ? (
-          <Loader />
-        ) : (
-          <PlaylistCrousel playlists={playlists} />
-        )}
-      </Suspense>
-      <div className="w-full flex items-center justify-center">
-        <Link href={"/playlists"} prefetch={true}>
-          <Button
-            variant=""
-            className="w-fit border border-border group transition-all"
-          >
-            Explore Playlists{" "}
             <ArrowRight className="group-hover:translate-x-1 transition-all" />
           </Button>
         </Link>

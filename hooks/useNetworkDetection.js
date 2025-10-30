@@ -12,7 +12,7 @@ export function useNetworkDetection() {
     const [isClient, setIsClient] = useState(false);
 
     // Define paths that require online access (you can customize this)
-    const onlinePathsOnly = ["/songs", "/playlists", "/artists", "/albums","/"];
+    const onlinePathsOnly = ["/songs", "/artists", "/albums","/"];
     const isOfflineRestrictedPage = onlinePathsOnly.includes(pathname);
 
     useEffect(() => {

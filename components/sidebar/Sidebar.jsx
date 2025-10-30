@@ -32,11 +32,6 @@ const routes = [
     href: "/songs",
   },
   {
-    label: "Playlists",
-    icon: ListMusic,
-    href: "/playlists",
-  },
-  {
     label: "Artists",
     icon: Users,
     href: "/artists",

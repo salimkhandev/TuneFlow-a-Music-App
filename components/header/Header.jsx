@@ -23,7 +23,6 @@ import {
   clearSearchHistory,
   fetchAlbums,
   fetchArtists,
-  fetchPlaylists,
   fetchSongs,
   getSearchHistory,
   removeFromSearchHistory,
@@ -37,7 +36,6 @@ import AlbumsList from "../albums-list/AlbumsList";
 import { ArtistCard } from "../artist-card/ArtistCard";
 import CustomThemeSwitcher from "../CustomThemeSwitcher";
 import Loader from "../loader/Loader";
-import { PlaylistCard } from "../playlist-card/PlaylistCard";
 import { ModeToggle } from "../playlist-crousel/mode-toggler/ModeToggler";
 import { SongList } from "../song-list/SongList";
 
@@ -56,13 +54,11 @@ const Header = () => {
 
   // Loading states
   const [isLoadingSongs, setIsLoadingSongs] = useState(false);
-  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
   const [isLoadingArtists, setIsLoadingArtists] = useState(false);
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
 
   // Results states
   const [songs, setSongs] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
 
@@ -94,26 +90,6 @@ const Header = () => {
         setSongs([]);
       } finally {
         setIsLoadingSongs(false);
-      }
-    },
-    [limit]
-  );
-
-  // Fetch playlists
-  const handleFetchPlaylists = useCallback(
-    async (searchQuery) => {
-      setIsLoadingPlaylists(true);
-      try {
-        const playlistsResponse = await fetchPlaylists({
-          query: searchQuery,
-          limit,
-        });
-        setPlaylists(playlistsResponse?.data?.results || []);
-      } catch (error) {
-        console.error("Error fetching playlists:", error);
-        setPlaylists([]);
-      } finally {
-        setIsLoadingPlaylists(false);
       }
     },
     [limit]
@@ -164,20 +140,17 @@ const Header = () => {
         addToSearchHistory(searchQuery);
         
         handleFetchSongs(searchQuery);
-        handleFetchPlaylists(searchQuery);
         handleFetchArtists(searchQuery);
         handleFetchAlbums(searchQuery);
       } else {
         // Reset all results if query is empty
         setSongs([]);
-        setPlaylists([]);
         setArtists([]);
         setAlbums([]);
       }
     }, 300),
     [
       handleFetchSongs,
-      handleFetchPlaylists,
       handleFetchArtists,
       handleFetchAlbums,
     ]
@@ -235,7 +208,7 @@ const Header = () => {
           >
             <Search className="text-muted-foreground" />
             <p className="text-muted-foreground font-normal">
-              Search songs, artists, or playlists...
+              Search songs, artists, or albums...
             </p>
           </Button>
         </div>
@@ -330,7 +303,6 @@ const Header = () => {
           setShowSuggestions(false);
           // Reset all results when dialog closes
           setSongs([]);
-          setPlaylists([]);
           setArtists([]);
           setAlbums([]);
         }}
@@ -340,12 +312,12 @@ const Header = () => {
           <DialogHeader>
             <DialogTitle>Search</DialogTitle>
             <DialogDescription>
-              Search songs, artists, or playlists...
+              Search songs, artists, or albums...
             </DialogDescription>
           </DialogHeader>
           <div className="relative">
           <Input
-            placeholder="Type songs, artists, or playlists or search..."
+            placeholder="Type songs, artists, or albums..."
             value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
@@ -402,22 +374,7 @@ const Header = () => {
               )}
             </div>
 
-            {/* Playlists Section */}
-            <div className="flex flex-col gap-2">
-              <h1 className="font-semibold">Playlists</h1>
-              {isLoadingPlaylists ? (
-                <Loader />
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {playlists?.map((playlist, i) => (
-                    <PlaylistCard key={playlist.id || i} playlist={playlist} />
-                  ))}
-                </div>
-              )}
-              {!isLoadingPlaylists && playlists?.length === 0 && (
-                <p className="text-center">No playlists found</p>
-              )}
-            </div>
+            
 
             {/* Artists Section */}
             <div className="flex flex-col gap-2">
