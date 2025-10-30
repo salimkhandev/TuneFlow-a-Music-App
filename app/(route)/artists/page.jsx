@@ -1,10 +1,9 @@
 "use client";
 import { ArtistCard } from "@/components/artist-card/ArtistCard";
 import Loader from "@/components/loader/Loader";
-import { SongList } from "@/components/song-list/SongList";
 import { Button } from "@/components/ui/button";
 import { fetchArtists } from "@/lib/utils";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const Page = () => {
   const [isLoadingArtists, setIsLoadingArtists] = useState(false);
@@ -15,8 +14,16 @@ const Page = () => {
   const handleFetchArtists = async (query) => {
     setIsLoadingArtists(true);
     const newArtists = await fetchArtists({ query, limit });
-    const results = newArtists?.data?.results;
-    setArtists((prevArtists) => [...prevArtists, ...results]); // Append new artists
+    const results = newArtists?.data?.results || [];
+    // Filter out artists with default/placeholder images or missing image
+    const filtered = results.filter((a) => {
+      const images = a?.image;
+      const url = Array.isArray(images) && images.length > 0 ? images[images.length - 1]?.url : undefined;
+      if (!url || typeof url !== "string") return false;
+      const lowered = url.toLowerCase();
+      return !lowered.includes("artist-default-music.png") && !lowered.includes("placeholder") && !lowered.includes("default");
+    });
+    setArtists((prevArtists) => [...prevArtists, ...filtered]); // Append filtered artists
     setIsLoadingArtists(false);
   };
 

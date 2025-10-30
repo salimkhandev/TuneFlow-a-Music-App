@@ -39,7 +39,7 @@ const page = () => {
           </div>
 
           <div className="p-6 flex flex-col gap-6">
-            <div className="sticky top-0 bg-background/70 backdrop-blur-sm py-4 z-10">
+            <div className="sticky top-0 bg-background/70 backdrop-blur-sm py-4 px-6 z-10">
               <h1 className="text-lg font-semibold">
                 {decodeHtmlEntities(album?.name)}
               </h1>
