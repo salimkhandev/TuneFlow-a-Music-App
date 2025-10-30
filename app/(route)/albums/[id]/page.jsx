@@ -22,6 +22,12 @@ const page = () => {
     handleFetchAlbum();
   }, [id]);
 
+  const getLastImageUrl = (images) => {
+    if (!Array.isArray(images) || images.length === 0) return null;
+    const last = images[images.length - 1];
+    return last?.url || null;
+  };
+
   return (
     <div className="relative min-h-screen">
       {isLoadingAlbum || !album ? (
@@ -31,7 +37,8 @@ const page = () => {
           {/* Blurred background image */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <img
-              src={album?.image[album?.image?.length - 1].url}
+              src={getLastImageUrl(album?.image) || 
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDMyMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNjAgMjQwQzIwNS40NjQgMjQwIDI0MCAyMDUuNDY0IDI0MCAxNjBDMjQwIDExNC41MzYgMjA1LjQ2NCA4MCAxNjAgODBDMTE0LjUzNiA4MCA4MCAxMTQuNTM2IDgwIDE2MEM4MCAyMDUuNDY0IDExNC41MzYgMjQwIDE2MCAyNDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMzYgMTI4TDEzNiAxOTJMMTYwIDE3NkwxODQgMTkyTDE4NCAxMjhMMTM2IDEyOFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+"}
               alt="album image"
               className="w-full h-full object-cover object-center blur-lg scale-105"
             />

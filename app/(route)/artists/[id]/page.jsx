@@ -32,12 +32,18 @@ const page = () => {
     handleFetchPlaylist();
   }, [id]);
 
+  const getLastImageUrl = (images) => {
+    if (!Array.isArray(images) || images.length === 0) return null;
+    const last = images[images.length - 1];
+    return last?.url || null;
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <Card className="flex items-center gap-4 p-4">
         <Avatar className="h-20 w-20 sm:h-32 sm:w-32">
           <AvatarImage
-            src={artist?.image[artist?.image?.length - 1]?.url}
+            src={getLastImageUrl(artist?.image) || undefined}
             alt="@shadcn"
           />
           <AvatarFallback>{getInitials(artist?.name)}</AvatarFallback>
