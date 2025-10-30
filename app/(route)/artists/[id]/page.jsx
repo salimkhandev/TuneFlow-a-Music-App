@@ -59,16 +59,24 @@ const page = () => {
           </Badge>
         </div>
       </Card>
-      <h1 className="text-2xl font-semibold">Bio</h1>
-      <Card className="p-4">
-        <p>{artist?.bio?.length === 0 && "No Bio Available"}</p>
-        <Accordion type="single" collapsible className="w-full">
+      <h1 className="text-2xl font-semibold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+        Bio
+      </h1>
+      <Card className="p-4 md:p-6 border border-border/60 bg-card/60 backdrop-blur-md shadow-lg rounded-xl">
+        <p className="text-sm text-muted-foreground mb-2">
+          {artist?.bio?.length === 0 && "No Bio Available"}
+        </p>
+        <Accordion type="single" collapsible className="w-full space-y-2">
           {artist?.bio?.map((bio, i) => (
-            <AccordionItem key={i} value={bio?.sequence}>
-              <AccordionTrigger className="hover:no-underline py-2">
-                {bio?.title}
+            <AccordionItem
+              key={i}
+              value={bio?.sequence}
+              className="rounded-lg border border-border/60 overflow-hidden"
+            >
+              <AccordionTrigger className="hover:no-underline py-3 px-3 bg-muted/10 hover:bg-muted/20 transition-colors">
+                <span className="font-medium tracking-wide">{bio?.title}</span>
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground">
+              <AccordionContent className="px-3 pb-4 leading-relaxed text-sm md:text-base text-muted-foreground">
                 {bio?.text}
               </AccordionContent>
             </AccordionItem>
