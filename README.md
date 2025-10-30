@@ -93,6 +93,10 @@ The app is configured with `next-pwa` to enable installability and offline cachi
 
 ---
 
+### Watch your favourite song even offline
+
+---
+
 ## Contributing
 1. Create a new branch from `main`
 2. Make your changes with clear commit messages
