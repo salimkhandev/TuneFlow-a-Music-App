@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JioSaavn API Tester</title>
+    <style>
+        :root { --bg:#0f1115; --panel:#151925; --muted:#8b96a9; --text:#e6edf3; --accent:#4f77ff; --accent2:#22c55e; --error:#ef4444; --border:#243044; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: var(--text); }
+        header { padding: 20px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #121624 0%, #0f1115 100%); position: sticky; top: 0; z-index: 10; }
+        header h1 { margin: 0 0 6px 0; font-size: 20px; }
+        header .sub { color: var(--muted); font-size: 13px; }
+        main { padding: 20px; display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+        @media (max-width: 1024px) { main { grid-template-columns: 1fr; } }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+        .left { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 96px); overflow: auto; padding: 12px; }
+        .right { display: grid; grid-template-rows: auto 1fr; gap: 12px; max-height: calc(100vh - 96px); }
+        .endpoint { padding: 12px; }
+        .endpoint summary { cursor: pointer; font-weight: 600; padding: 10px 12px; border-radius: 8px; background: #13192a; border: 1px solid var(--border); list-style: none; }
+        .endpoint[open] summary { border-color: var(--accent); box-shadow: 0 0 0 1px inset rgba(79, 119, 255, 0.25); }
+        .endpoint summary::-webkit-details-marker { display: none; }
+        .endpoint .body { padding: 12px; display: grid; gap: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .row { display: grid; gap: 6px; }
+        label { font-size: 12px; color: var(--muted); }
+        input, select, textarea { width: 100%; padding: 10px 12px; background: #0f1422; border: 1px solid var(--border); color: var(--text); border-radius: 8px; outline: none; }
+        textarea { min-height: 72px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+        .actions { display: flex; gap: 8px; }
+        button { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: #18213a; color: var(--text); cursor: pointer; }
+        button.primary { background: var(--accent); border-color: #3159ff; color: white; }
+        button.secondary { background: #1b243d; }
+        button:disabled { opacity: .6; cursor: not-allowed; }
+        .result { padding: 12px; background: #0b0f19; border-top: 1px dashed var(--border); border-radius: 8px; }
+        .status { font-size: 12px; color: var(--muted); }
+        .error { color: var(--error); }
+        .success { color: var(--accent2); }
+        .result pre { margin: 8px 0 0 0; max-height: 40vh; overflow: auto; }
+        .viewer { padding: 12px; overflow: auto; }
+        .viewer .title { display: flex; justify-content: space-between; align-items: center; }
+        .viewer .title .endpoint-name { font-weight: 600; }
+        .muted { color: var(--muted); }
+        .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; color: var(--muted); }
+        .note { padding: 10px 12px; border: 1px solid var(--border); background: #12182a; border-radius: 8px; color: var(--muted); font-size: 12px; }
+        .link { color: var(--accent); text-decoration: none; }
+    </style>
+    <script>
+        const BASE_URL = "https://saavn.sumit.co"; // from servers in jiosaavn-api.json
+
+        const endpoints = [
+            { id: "globalSearch",      title: "Search: Global", method: "GET", path: "/api/search",              params: [
+                { key: "query", label: "query", placeholder: "Imagine Dragons", required: true }
+            ]},
+            { id: "searchSongs",       title: "Search: Songs",  method: "GET", path: "/api/search/songs",        params: [
+                { key: "query", label: "query", placeholder: "Believer", required: true },
+                { key: "page",  label: "page",  placeholder: "0" },
+                { key: "limit", label: "limit", placeholder: "10" }
+            ]},
+            { id: "searchAlbums",      title: "Search: Albums", method: "GET", path: "/api/search/albums",       params: [
+                { key: "query", label: "query", placeholder: "Evolve", required: true },
+                { key: "page",  label: "page",  placeholder: "0" },
+                { key: "limit", label: "limit", placeholder: "10" }
+            ]},
+            { id: "searchArtists",     title: "Search: Artists",method: "GET", path: "/api/search/artists",      params: [
+                { key: "query", label: "query", placeholder: "Adele", required: true },
+                { key: "page",  label: "page",  placeholder: "0" },
+                { key: "limit", label: "limit", placeholder: "10" }
+            ]},
+            { id: "searchPlaylists",   title: "Search: Playlists", method: "GET", path: "/api/search/playlists", params: [
+                { key: "query", label: "query", placeholder: "Indie", required: true },
+                { key: "page",  label: "page",  placeholder: "0" },
+                { key: "limit", label: "limit", placeholder: "10" }
+            ]},
+            { id: "getSongs",          title: "Songs: By IDs or Link", method: "GET", path: "/api/songs",        params: [
+                { key: "ids",  label: "ids (comma-separated)", placeholder: "3IoDK8qI,4IoDK8qI" },
+                { key: "link", label: "link", placeholder: "https://www.jiosaavn.com/song/houdini/OgwhbhtDRwM" }
+            ]},
+            { id: "getSongById",       title: "Songs: By ID", method: "GET", path: "/api/songs/{id}",            pathParam: { key: "id", placeholder: "3IoDK8qI", required: true } },
+            { id: "getSongSuggestions",title: "Songs: Suggestions", method: "GET", path: "/api/songs/{id}/suggestions", pathParam: { key: "id", placeholder: "yDeAS8Eh", required: true }, params: [
+                { key: "limit", label: "limit", placeholder: "10" }
+            ]},
+            { id: "getAlbum",          title: "Album: By ID or Link", method: "GET", path: "/api/albums",        params: [
+                { key: "id",   label: "id",   placeholder: "23241654" },
+                { key: "link", label: "link", placeholder: "https://www.jiosaavn.com/album/future-nostalgia/ITIyo-GDr7A_" }
+            ]},
+            { id: "getArtist",         title: "Artists: By ID or Link", method: "GET", path: "/api/artists",     params: [
+                { key: "id",        label: "id",        placeholder: "1274170" },
+                { key: "link",      label: "link",      placeholder: "https://www.jiosaavn.com/artist/dua-lipa-songs/r-OWIKgpX2I_" },
+                { key: "page",      label: "page",      placeholder: "1" },
+                { key: "songCount", label: "songCount", placeholder: "10" },
+                { key: "albumCount",label: "albumCount",placeholder: "10" },
+                { key: "sortBy",    label: "sortBy",    placeholder: "popularity" },
+                { key: "sortOrder", label: "sortOrder", placeholder: "desc" }
+            ]},
+            { id: "getArtistById",     title: "Artists: By ID", method: "GET", path: "/api/artists/{id}",         pathParam: { key: "id", placeholder: "1274170", required: true }, params: [
+                { key: "page",      label: "page",      placeholder: "0" },
+                { key: "songCount", label: "songCount", placeholder: "10" },
+                { key: "albumCount",label: "albumCount",placeholder: "10" },
+                { key: "sortBy",    label: "sortBy",    placeholder: "popularity (or latest, alphabetical)" },
+                { key: "sortOrder", label: "sortOrder", placeholder: "desc (or asc)" }
+            ]},
+            { id: "getArtistSongs",    title: "Artists: Songs", method: "GET", path: "/api/artists/{id}/songs",   pathParam: { key: "id", placeholder: "1274170", required: true }, params: [
+                { key: "page",    label: "page",    placeholder: "0" },
+                { key: "sortBy",  label: "sortBy",  placeholder: "popularity|latest|alphabetical" },
+                { key: "sortOrder", label: "sortOrder", placeholder: "desc|asc" }
+            ]},
+            { id: "getArtistAlbums",   title: "Artists: Albums", method: "GET", path: "/api/artists/{id}/albums", pathParam: { key: "id", placeholder: "1274170", required: true }, params: [
+                { key: "page",    label: "page",    placeholder: "0" },
+                { key: "sortBy",  label: "sortBy",  placeholder: "popularity|latest|alphabetical" },
+                { key: "sortOrder", label: "sortOrder", placeholder: "desc|asc" }
+            ]},
+            { id: "getPlaylist",       title: "Playlist: By ID or Link", method: "GET", path: "/api/playlists",   params: [
+                { key: "id",   label: "id",   placeholder: "82914609" },
+                { key: "link", label: "link", placeholder: "https://www.jiosaavn.com/featured/its-indie-english/AMoxtXyKHoU_" },
+                { key: "page", label: "page", placeholder: "0" },
+                { key: "limit",label: "limit",placeholder: "10" }
+            ]}
+        ];
+
+        // Predefined defaults for automatic testing without manual entry
+        const defaultValuesByEndpoint = {
+            globalSearch: { query: "Imagine Dragons" },
+            searchSongs: { query: "birwa", page: "0", limit: "5" },
+            searchAlbums: { query: "Evolve", page: "0", limit: "5" },
+            searchArtists: { query: "Adele", page: "0", limit: "5" },
+            searchPlaylists: { query: "Indie", page: "0", limit: "5" },
+            getSongs: { ids: "3IoDK8qI", link: "" },
+            getSongById: { path: { id: "3IoDK8qI" } },
+            getSongSuggestions: { path: { id: "yDeAS8Eh" }, limit: "5" },
+            getAlbum: { id: "23241654", link: "" },
+            getArtist: { id: "1274170", page: "1", songCount: "5", albumCount: "5", sortBy: "popularity", sortOrder: "desc" },
+            getArtistById: { path: { id: "1274170" }, page: "0", songCount: "5", albumCount: "5", sortBy: "popularity", sortOrder: "desc" },
+            getArtistSongs: { path: { id: "1274170" }, page: "0", sortBy: "popularity", sortOrder: "desc" },
+            getArtistAlbums: { path: { id: "1274170" }, page: "0", sortBy: "popularity", sortOrder: "desc" },
+            getPlaylist: { id: "82914609", link: "", page: "0", limit: "5" }
+        };
+
+        function qs(sel, root=document) { return root.querySelector(sel); }
+        function qsa(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+
+        function renderEndpoints() {
+            const container = qs('#endpoints');
+            endpoints.forEach((e) => {
+                const details = document.createElement('details');
+                details.className = 'endpoint panel';
+                details.id = `ep-${e.id}`;
+                const summary = document.createElement('summary');
+                summary.textContent = `${e.title} (${e.method} ${e.path})`;
+                const body = document.createElement('div');
+                body.className = 'body';
+
+                if (e.pathParam) {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    const label = document.createElement('label');
+                    label.textContent = `Path Param: {${e.pathParam.key}}`;
+                    const input = document.createElement('input');
+                    input.placeholder = e.pathParam.placeholder || '';
+                    input.required = !!e.pathParam.required;
+                    input.name = `path_${e.pathParam.key}`;
+                    row.appendChild(label); row.appendChild(input);
+                    body.appendChild(row);
+                }
+
+                if (e.params && e.params.length) {
+                    const grid = document.createElement('div');
+                    grid.className = 'grid';
+                    e.params.forEach(p => {
+                        const row = document.createElement('div');
+                        row.className = 'row';
+                        const label = document.createElement('label');
+                        label.textContent = `Query: ${p.key}`;
+                        const input = document.createElement('input');
+                        input.placeholder = p.placeholder || '';
+                        input.required = !!p.required;
+                        input.name = `query_${p.key}`;
+                        row.appendChild(label); row.appendChild(input);
+                        grid.appendChild(row);
+                    });
+                    body.appendChild(grid);
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+                const btn = document.createElement('button');
+                btn.className = 'primary';
+                btn.textContent = 'Send Request';
+                btn.addEventListener('click', () => sendRequest(e, details));
+                const fill = document.createElement('button');
+                fill.className = 'secondary';
+                fill.textContent = 'Fill Examples';
+                fill.addEventListener('click', () => fillExamples(details));
+                actions.appendChild(btn); actions.appendChild(fill);
+                body.appendChild(actions);
+
+                const result = document.createElement('div');
+                result.className = 'result';
+                result.innerHTML = `<div class="status">Ready</div><pre class="kbd" aria-live="polite"></pre>`;
+                body.appendChild(result);
+
+                details.appendChild(summary);
+                details.appendChild(body);
+                container.appendChild(details);
+
+                // Auto-fill defaults for this endpoint
+                const defaults = defaultValuesByEndpoint[e.id];
+                if (defaults) {
+                    if (e.pathParam && defaults.path && defaults.path[e.pathParam.key]) {
+                        const el = qs(`input[name="path_${e.pathParam.key}"]`, details);
+                        if (el && !el.value) el.value = String(defaults.path[e.pathParam.key]);
+                    }
+                    (e.params || []).forEach(p => {
+                        const v = defaults[p.key];
+                        if (v !== undefined) {
+                            const el = qs(`input[name="query_${p.key}"]`, details);
+                            if (el && !el.value) el.value = String(v);
+                        }
+                    });
+                }
+            });
+        }
+
+        function fillExamples(detailsEl) {
+            qsa('input', detailsEl).forEach(input => {
+                if (!input.value && input.placeholder) input.value = input.placeholder;
+            });
+        }
+
+        function buildUrl(ep, detailsEl) {
+            const pathParamVal = ep.pathParam ? qs(`input[name="path_${ep.pathParam.key}"]`, detailsEl).value.trim() : null;
+            let path = ep.path;
+            if (ep.pathParam) path = path.replace(`{${ep.pathParam.key}}`, encodeURIComponent(pathParamVal));
+            const params = new URLSearchParams();
+            (ep.params || []).forEach(p => {
+                const val = qs(`input[name="query_${p.key}"]`, detailsEl).value.trim();
+                if (val) params.set(p.key, val);
+            });
+            const qsPart = params.toString();
+            return `${BASE_URL}${path}${qsPart ? `?${qsPart}` : ''}`;
+        }
+
+        async function sendRequest(ep, detailsEl) {
+            const statusEl = qs('.status', detailsEl);
+            const pre = qs('pre', detailsEl);
+            const url = buildUrl(ep, detailsEl);
+            statusEl.textContent = `Requesting ${ep.method} ${url}`;
+            pre.textContent = '';
+            try {
+                const res = await fetch(url, { method: ep.method, headers: { 'Accept': 'application/json' } });
+                const text = await res.text();
+                let json;
+                try { json = JSON.parse(text); } catch { json = { raw: text }; }
+                statusEl.innerHTML = `${res.ok ? '<span class="success">OK</span>' : '<span class="error">ERROR</span>'} · ${res.status} ${res.statusText}`;
+                pre.textContent = JSON.stringify(json, null, 2);
+                showInViewer(ep, url, json);
+            } catch (err) {
+                statusEl.innerHTML = `<span class="error">Network Error</span>`;
+                pre.textContent = String(err);
+            }
+        }
+
+        function showInViewer(ep, url, json) {
+            const nameEl = qs('#viewer-endpoint');
+            const urlEl = qs('#viewer-url');
+            const jsonEl = qs('#viewer-json');
+            nameEl.textContent = ep.title;
+            urlEl.textContent = url;
+            jsonEl.textContent = JSON.stringify(json, null, 2);
+        }
+
+        async function runAllSequential() {
+            for (const e of endpoints) {
+                const details = qs(`#ep-${e.id}`);
+                if (!details) continue;
+                await sendRequest(e, details);
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderEndpoints();
+            // Open the first endpoint by default for convenience
+            const first = qs('.endpoint');
+            if (first) first.open = true;
+            // Auto-run all with defaults
+            runAllSequential();
+        });
+    </script>
+    <!-- Spec reference: jiosaavn-api.json placed alongside this file -->
+</head>
+<body>
+    <header>
+        <h1>JioSaavn API Tester</h1>
+        <div class="sub">Using server <span class="kbd">https://saavn.sumit.co</span> · Spec: <span class="kbd">jiosaavn-api.json</span></div>
+        <div class="actions" style="margin-top:10px;">
+            <button class="primary" id="run-all">Run All</button>
+            <button class="secondary" id="fill-all">Fill All Examples</button>
+        </div>
+        <script>
+            // Header buttons actions
+            window.addEventListener('DOMContentLoaded', () => {
+                const runAllBtn = document.getElementById('run-all');
+                const fillAllBtn = document.getElementById('fill-all');
+                if (runAllBtn) runAllBtn.addEventListener('click', () => runAllSequential());
+                if (fillAllBtn) fillAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.endpoint').forEach(d => fillExamples(d));
+                });
+            });
+        </script>
+    </header>
+    <main>
+        <section class="left">
+            <div class="note">
+                Fill inputs (or click "Fill Examples"), then click "Send Request". Results appear below each section and in the right-hand viewer.
+            </div>
+            <div id="endpoints"></div>
+        </section>
+        <section class="right">
+            <div class="panel viewer">
+                <div class="title">
+                    <div>
+                        <div class="muted">Last Response From</div>
+                        <div class="endpoint-name" id="viewer-endpoint">—</div>
+                    </div>
+                    <div style="text-align:right; max-width: 60%;">
+                        <div class="muted">URL</div>
+                        <div class="kbd" id="viewer-url" style="word-break: break-all;">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel viewer" style="overflow:auto;">
+                <div class="muted">JSON</div>
+                <pre class="kbd" id="viewer-json">{}</pre>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+
+
